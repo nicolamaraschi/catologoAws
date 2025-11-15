@@ -1,32 +1,37 @@
 version: 1
 #############################################################################
 # AWS Amplify Build Configuration
-# Frontend Catalogo Utente (Public Catalog - No Authentication)
+# Frontend Catalogo Admin (Admin Panel - Cognito Authentication)
 #############################################################################
 
 # Environment variables (set in Amplify Console)
 # REACT_APP_API_BASE_URL - API Gateway URL from CloudFormation outputs
+# REACT_APP_COGNITO_USER_POOL_ID - Cognito User Pool ID
+# REACT_APP_COGNITO_CLIENT_ID - Cognito Client ID
+# REACT_APP_COGNITO_REGION - AWS Region (e.g., eu-west-1)
 # REACT_APP_CLOUDFRONT_URL - CloudFront URL for images
 
 frontend:
   phases:
     preBuild:
       commands:
-        - echo "Installing dependencies for frontend-catalogo-utente..."
-        - npm ci
+        - cd frontend-catalogo-admin
+        - echo "Installing dependencies for frontend-catalogo-admin..."
+        - npm ci --cache .npm --prefer-offline
         - echo "Environment - API Base URL is $REACT_APP_API_BASE_URL"
+        - echo "Environment - Cognito User Pool ID is $REACT_APP_COGNITO_USER_POOL_ID"
     build:
       commands:
         - echo "Building React application..."
         - npm run build
         - echo "Build completed successfully"
   artifacts:
-    baseDirectory: build
+    baseDirectory: frontend-catalogo-admin/build
     files:
       - '**/*'
   cache:
     paths:
-      - node_modules/**/*
+      - frontend-catalogo-admin/node_modules/**/*
 
 # Custom headers for security and performance
 customHeaders:
@@ -42,6 +47,8 @@ customHeaders:
         value: 'strict-origin-when-cross-origin'
       - key: 'Permissions-Policy'
         value: 'geolocation=(), microphone=(), camera=()'
+      - key: 'Content-Security-Policy'
+        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.amazonaws.com https://*.cloudfront.net"
   - pattern: '*.js'
     headers:
       - key: 'Cache-Control'
@@ -50,14 +57,6 @@ customHeaders:
     headers:
       - key: 'Cache-Control'
         value: 'public, max-age=31536000, immutable'
-  - pattern: '*.jpg'
-    headers:
-      - key: 'Cache-Control'
-        value: 'public, max-age=86400'
-  - pattern: '*.png'
-    headers:
-      - key: 'Cache-Control'
-        value: 'public, max-age=86400'
 
 # Redirect rules for SPA routing
 redirects:
