@@ -170,7 +170,7 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           ViewerProtocolPolicy: redirect-to-https
-          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
           Compress: true
         Origins:
           - Id: S3Origin
@@ -240,7 +240,7 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Sub '${AWS::StackName}-Lambda-DLQ'
-      MessageRetentionPeriod: 1209600 # 14 days
+      MessageRetentionPeriod: 1209600
       Tags:
         - Key: Environment
           Value: !Ref Environment
@@ -259,7 +259,6 @@ Resources:
         AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
         AllowOrigin: "'*'"
         MaxAge: "'600'"
-      # --- SETTAGGI LOG RIMOSSI TOTALMENTE ---
 
   #############################################################################
   # LAMBDA FUNCTIONS - PUBLIC (No Auth)
@@ -487,13 +486,12 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
-  # --- FUNZIONI ADMIN (Read Products) ---
   AdminGetProductsFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${AWS::StackName}-AdminGetProducts'
       CodeUri: backend-lambda/
-      Handler: src/handlers/public/getProducts.handler # Riutilizza codice
+      Handler: src/handlers/public/getProducts.handler
       Description: Get all products (admin only)
       Policies:
         - DynamoDBReadPolicy:
@@ -513,7 +511,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-AdminGetProductById'
       CodeUri: backend-lambda/
-      Handler: src/handlers/public/getProductById.handler # Riutilizza codice
+      Handler: src/handlers/public/getProductById.handler
       Description: Get product by ID (admin only)
       Policies:
         - DynamoDBReadPolicy:
@@ -529,15 +527,14 @@ Resources:
               Authorizer: CognitoAuthorizer
 
   #############################################################################
-  # LAMBDA FUNCTIONS - ADMIN (Category Management)
+  # LAMBDA FUNCTIONS - ADMIN (Category Management) - FIXED PATHS
   #############################################################################
-
   AdminGetCategoriesFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub '${AWS::StackName}-AdminGetCategories'
       CodeUri: backend-lambda/
-      Handler: src/handlers/public/getCategories.handler # Riutilizza codice
+      Handler: src/handlers/public/getCategories.handler
       Description: Get all categories (admin only)
       Policies:
         - DynamoDBReadPolicy:
@@ -557,7 +554,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-AdminGetSubcategories'
       CodeUri: backend-lambda/
-      Handler: src/handlers/public/getProductsByCategory.handler # Riutilizza codice
+      Handler: src/handlers/public/getProductsByCategory.handler
       Description: Get subcategories for a category (admin only)
       Policies:
         - DynamoDBReadPolicy:
@@ -577,7 +574,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-CreateCategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/createCategory.handler
+      Handler: src/handlers/admin/createCategory.handler
       Description: Create a new category (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -597,7 +594,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-UpdateCategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/updateCategory.handler
+      Handler: src/handlers/admin/updateCategory.handler
       Description: Update a category's translations (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -617,7 +614,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-DeleteCategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/deleteCategory.handler
+      Handler: src/handlers/admin/deleteCategory.handler
       Description: Delete a category and all its subcategories (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -637,7 +634,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-AddSubcategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/addSubcategory.handler
+      Handler: src/handlers/admin/addSubcategory.handler
       Description: Add a subcategory to a category (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -657,7 +654,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-UpdateSubcategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/updateSubcategory.handler
+      Handler: src/handlers/admin/updateSubcategory.handler
       Description: Update a subcategory name (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -677,7 +674,7 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-DeleteSubcategory'
       CodeUri: backend-lambda/
-      Handler: src/handlers/admin/categories/deleteSubcategory.handler
+      Handler: src/handlers/admin/deleteSubcategory.handler
       Description: Delete a subcategory from a category (admin only)
       Policies:
         - DynamoDBCrudPolicy:
@@ -691,6 +688,26 @@ Resources:
             Method: DELETE
             Auth:
               Authorizer: CognitoAuthorizer
+
+  #############################################################################
+  # CATCH-ALL FUNCTION (for proper 404 responses)
+  #############################################################################
+  CatchAllFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub '${AWS::StackName}-CatchAll'
+      CodeUri: backend-lambda/
+      Handler: src/handlers/catchAll.handler
+      Description: Catch-all for undefined routes (returns 404)
+      Events:
+        CatchAll:
+          Type: Api
+          Properties:
+            RestApiId: !Ref CatalogoApi
+            Path: /{proxy+}
+            Method: ANY
+            Auth:
+              Authorizer: NONE
 
   #############################################################################
   # CLOUDWATCH ALARMS

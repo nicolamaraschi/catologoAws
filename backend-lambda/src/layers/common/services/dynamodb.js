@@ -269,25 +269,52 @@ async function getProductsByCategory(categoria, options = {}) {
   const operation = async () => {
     try {
       const { limit = 50, lastEvaluatedKey = null } = options;
+      
+      console.info('Querying products by category', {
+        categoria,
+        limit,
+        hasLastKey: !!lastEvaluatedKey
+      });
+
+      // USA IL CAMPO FLAT categoriaIt per il GSI
       const params = {
         TableName: PRODUCTS_TABLE,
         IndexName: GSI.CATEGORY_INDEX,
-        KeyConditionExpression: 'categoria.it = :categoria',
+        KeyConditionExpression: 'categoriaIt = :categoria',  // ✅ CAMPO FLAT
         ExpressionAttributeValues: {
           ':categoria': categoria,
         },
         Limit: limit,
       };
+
       if (lastEvaluatedKey) {
         params.ExclusiveStartKey = lastEvaluatedKey;
       }
+
+      console.info('DynamoDB Query params', { 
+        indexName: params.IndexName,
+        keyCondition: params.KeyConditionExpression,
+        categoria 
+      });
+
       const response = await docClient.send(new QueryCommand(params));
+      
+      console.info('Query results', {
+        itemsCount: response.Items?.length || 0,
+        hasMore: !!response.LastEvaluatedKey
+      });
+
       return {
         items: response.Items || [],
         lastEvaluatedKey: response.LastEvaluatedKey,
         hasMore: !!response.LastEvaluatedKey,
       };
     } catch (error) {
+      console.error('Error in getProductsByCategory', {
+        error: error.message,
+        categoria,
+        errorName: error.name
+      });
       throw handleAWSError(error);
     }
   };
@@ -295,7 +322,6 @@ async function getProductsByCategory(categoria, options = {}) {
     context: { operation: 'getProductsByCategory', categoria },
   })();
 }
-
 /**
  * Ottieni prodotti per categoria e sottocategoria
  * @param {string} categoria - Nome Categoria
@@ -307,27 +333,52 @@ async function getProductsByCategoryAndSubcategory(categoria, sottocategoria, op
   const operation = async () => {
     try {
       const { limit = 50, lastEvaluatedKey = null } = options;
+      
+      console.info('Querying products by category and subcategory', {
+        categoria,
+        sottocategoria,
+        limit
+      });
+
+      // USA IL CAMPO FLAT categoriaIt per il GSI + FilterExpression per sottocategoria
       const params = {
         TableName: PRODUCTS_TABLE,
         IndexName: GSI.CATEGORY_INDEX,
-        KeyConditionExpression: 'categoria.it = :categoria',
-        FilterExpression: 'sottocategoria.it = :sottocategoria',
+        KeyConditionExpression: 'categoriaIt = :categoria',  // ✅ CAMPO FLAT
+        FilterExpression: 'sottocategoriaIt = :sottocategoria OR sottocategoria.#it = :sottocategoria',
+        ExpressionAttributeNames: {
+          '#it': 'it'
+        },
         ExpressionAttributeValues: {
           ':categoria': categoria,
           ':sottocategoria': sottocategoria,
         },
         Limit: limit,
       };
+
       if (lastEvaluatedKey) {
         params.ExclusiveStartKey = lastEvaluatedKey;
       }
+
       const response = await docClient.send(new QueryCommand(params));
+
+      console.info('Query results', {
+        itemsCount: response.Items?.length || 0,
+        hasMore: !!response.LastEvaluatedKey
+      });
+
       return {
         items: response.Items || [],
         lastEvaluatedKey: response.LastEvaluatedKey,
         hasMore: !!response.LastEvaluatedKey,
       };
     } catch (error) {
+      console.error('Error in getProductsByCategoryAndSubcategory', {
+        error: error.message,
+        categoria,
+        sottocategoria,
+        errorName: error.name
+      });
       throw handleAWSError(error);
     }
   };
@@ -335,7 +386,6 @@ async function getProductsByCategoryAndSubcategory(categoria, sottocategoria, op
     context: { operation: 'getProductsByCategoryAndSubcategory', categoria, sottocategoria },
   })();
 }
-
 // ============================================================================
 // FUNZIONI PUBBLICHE CATEGORIE (NUOVA LOGICA)
 // Leggono dalla nuova CategoriesTable

@@ -2,6 +2,8 @@
  * Lambda Handler: Get Products By Category/Subcategory (Public)
  * GET /api/public/catalogo/categoria/{categoria}
  * GET /api/public/catalogo/categoria/{categoria}/sottocategoria/{sottocategoria}
+ * 
+ * FIX: Usa categoriaIt (campo flat) per GSI CategoryIndex
  */
 
 const { getProductsByCategory, getProductsByCategoryAndSubcategory, getSubcategories } = require('../../layers/common/services/dynamodb');
@@ -13,6 +15,7 @@ exports.handler = async (event) => {
   console.info('GetProductsByCategory invoked', {
     requestId: event.requestContext?.requestId,
     pathParameters: event.pathParameters,
+    path: event.path,
   });
 
   try {
@@ -26,6 +29,12 @@ exports.handler = async (event) => {
     const decodedCategoria = decodeURIComponent(categoria);
     const decodedSottocategoria = sottocategoria ? decodeURIComponent(sottocategoria) : null;
 
+    console.info('Decoded parameters', {
+      decodedCategoria,
+      decodedSottocategoria,
+      originalPath: event.path
+    });
+
     // Parse query parameters for pagination
     const limit = event.queryStringParameters?.limit ? parseInt(event.queryStringParameters.limit, 10) : 50;
     const lastEvaluatedKey = event.queryStringParameters?.lastKey
@@ -35,18 +44,24 @@ exports.handler = async (event) => {
     let result;
 
     // Check if this is a request for subcategories list
-    if (event.path.endsWith('/sottocategorie')) {
+    if (event.path.includes('/sottocategorie')) {
+      console.info('Fetching subcategories for category', { decodedCategoria });
       const subcategories = await getSubcategories(decodedCategoria);
       return successResponse(HTTP_STATUS.OK, subcategories);
     }
 
     // Get products by category and optionally subcategory
     if (decodedSottocategoria) {
+      console.info('Fetching products by category and subcategory', {
+        decodedCategoria,
+        decodedSottocategoria
+      });
       result = await getProductsByCategoryAndSubcategory(decodedCategoria, decodedSottocategoria, {
         limit,
         lastEvaluatedKey,
       });
     } else {
+      console.info('Fetching products by category', { decodedCategoria });
       result = await getProductsByCategory(decodedCategoria, { limit, lastEvaluatedKey });
     }
 
@@ -65,12 +80,19 @@ exports.handler = async (event) => {
       metadata.nextKey = encodeURIComponent(JSON.stringify(result.lastEvaluatedKey));
     }
 
+    console.info('Returning results', {
+      count: result.items.length,
+      hasMore: result.hasMore
+    });
+
     return successResponse(HTTP_STATUS.OK, result.items, metadata);
+    
   } catch (error) {
     logError(error, {
       handler: 'getProductsByCategory',
       categoria: event.pathParameters?.categoria,
       sottocategoria: event.pathParameters?.sottocategoria,
+      path: event.path,
       requestId: event.requestContext?.requestId,
     });
 
