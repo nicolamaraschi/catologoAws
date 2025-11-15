@@ -20,16 +20,16 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@aws-sdk/client-dynamodb": "^3.682.0",
-    "@aws-sdk/lib-dynamodb": "^3.682.0",
-    "@aws-sdk/client-s3": "^3.682.0",
+    "@aws-sdk/client-dynamodb": "^3.932.0",
+    "@aws-sdk/client-s3": "^3.932.0",
+    "@aws-sdk/lib-dynamodb": "^3.932.0",
     "@aws-sdk/s3-request-presigner": "^3.682.0",
-    "uuid": "^10.0.0",
-    "joi": "^17.13.3"
+    "joi": "^17.13.3",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "mongodb": "^6.10.0",
-    "axios": "^1.7.7",
-    "dotenv": "^16.4.5"
+    "axios": "^1.13.2",
+    "dotenv": "^16.6.1",
+    "mongodb": "^6.21.0"
   }
 }

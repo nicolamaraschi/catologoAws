@@ -1,31 +1,31 @@
 /**
  * Migration Script: MongoDB Atlas → AWS DynamoDB
  * Migrates all products from MongoDB ProdottoCatalogo collection to DynamoDB
+ * * --- AGGIORNATO CON CONTROLLI PRELIMINARI E DB CORRETTO ---
  *
  * Prerequisites:
  * 1. Set MONGO_URI environment variable
  * 2. Configure AWS credentials
  * 3. Deploy CloudFormation stack first to create DynamoDB table
- *
- * Usage:
- *   MONGO_URI=mongodb+srv://... AWS_REGION=eu-west-1 PRODUCTS_TABLE=YourTableName node scripts/migrate-mongodb-to-dynamodb.js
  */
 
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
-const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
-const { DynamoDBDocumentClient, BatchWriteCommand } = require('@aws-sdk/lib-dynamodb');
+// AGGIUNTO DescribeTableCommand per il controllo preliminare
+const { DynamoDBClient, DescribeTableCommand } = require('@aws-sdk/client-dynamodb');
+const { DynamoDBDocumentClient, BatchWriteCommand, ScanCommand } = require('@aws-sdk/lib-dynamodb');
 const { v4: uuidv4 } = require('uuid');
 
 // Configuration
 const MONGO_URI = process.env.MONGO_URI;
-const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE || 'CatalogoProducts';
+// Rimosso il default 'CatalogoProducts' per fare affidamento solo sul .env
+const PRODUCTS_TABLE = process.env.PRODUCTS_TABLE;
 const AWS_REGION = process.env.AWS_REGION || 'eu-west-1';
 const BATCH_SIZE = 25; // DynamoDB BatchWrite limit
 
 // Validate environment variables
-if (!MONGO_URI) {
-  console.error('ERROR: MONGO_URI environment variable is required');
+if (!MONGO_URI || !PRODUCTS_TABLE) {
+  console.error('ERROR: MONGO_URI and PRODUCTS_TABLE environment variables are required');
   process.exit(1);
 }
 
@@ -37,10 +37,9 @@ const docClient = DynamoDBDocumentClient.from(dynamoClient);
  * Connect to MongoDB
  */
 async function connectToMongoDB() {
-  console.log('Connecting to MongoDB Atlas...');
+  // I log sono ora nella funzione 'migrateData'
   const client = new MongoClient(MONGO_URI);
   await client.connect();
-  console.log('✓ Connected to MongoDB');
   return client;
 }
 
@@ -122,7 +121,7 @@ async function batchWriteToDynamoDB(items) {
       await docClient.send(new BatchWriteCommand(retryParams));
     }
 
-    console.log(`✓ Batch write successful: ${items.length} items`);
+    // Rimosso il log "Batch write successful" per ridurre il rumore
   } catch (error) {
     console.error('✗ Batch write failed:', error.message);
     throw error;
@@ -144,16 +143,34 @@ async function migrateData() {
 
   try {
     console.log('='.repeat(60));
-    console.log('MongoDB to DynamoDB Migration Script');
+    console.log('MongoDB to DynamoDB Migration Script (CON CONTROLLI)');
     console.log('='.repeat(60));
-    console.log(`Source: MongoDB Atlas (${MONGO_URI.split('@')[1]})`);
+    console.log(`Source: MongoDB Atlas (${MONGO_URI.split('@')[1] || '...'})`);
     console.log(`Target: DynamoDB Table "${PRODUCTS_TABLE}" in ${AWS_REGION}`);
     console.log('='.repeat(60));
 
-    // Connect to MongoDB
+    // --- CONTROLLO 1: Accesso a DynamoDB Table ---
+    console.log('\n📦 [1/2] Verifying DynamoDB Table access...');
+    await dynamoClient.send(new DescribeTableCommand({ TableName: PRODUCTS_TABLE }));
+    console.log(`✓ DynamoDB Table access verified (${PRODUCTS_TABLE})`);
+
+    // --- CONTROLLO 2: Connessione a MongoDB ---
+    console.log('\n📦 [2/2] Connecting to MongoDB Atlas...');
     mongoClient = await connectToMongoDB();
-    const db = mongoClient.db();
-    const collection = db.collection('prodottocatologos'); // MongoDB collection name
+    console.log('✓ Connected to MongoDB');
+
+    console.log('\n' + '='.repeat(60));
+    console.log('✓ PREFLIGHT CHECKS PASSED. Starting migration...');
+    console.log('='.repeat(60));
+
+
+    // --- MODIFICA CHIAVE QUI ---
+    // Specifica il database "test"
+    const db = mongoClient.db('test'); 
+    // Specifica la collezione corretta
+    const collection = db.collection('prodottocatalogos');
+    // --- FINE MODIFICA ---
+
 
     // Count total documents
     const totalCount = await collection.countDocuments();
@@ -175,7 +192,7 @@ async function migrateData() {
     console.log(`✓ Transformed ${transformedProducts.length} products`);
 
     // Batch write to DynamoDB
-    console.log('\nWriting to DynamoDB in batches...');
+    console.log('\nWriting to DynamoDB in batches (25 items)...');
     let processedCount = 0;
 
     for (let i = 0; i < transformedProducts.length; i += BATCH_SIZE) {
@@ -184,7 +201,7 @@ async function migrateData() {
       processedCount += batch.length;
 
       const progress = ((processedCount / transformedProducts.length) * 100).toFixed(2);
-      console.log(`Progress: ${processedCount}/${transformedProducts.length} (${progress}%)`);
+      process.stdout.write(`Progress: ${processedCount}/${transformedProducts.length} (${progress}%) \r`);
 
       // Rate limiting to avoid throttling
       if (i + BATCH_SIZE < transformedProducts.length) {
@@ -192,12 +209,11 @@ async function migrateData() {
       }
     }
 
+    console.log(`\n\n✓ Batch write successful: ${processedCount} items`);
     console.log('\n' + '='.repeat(60));
-    console.log('✓ Migration completed successfully!');
+    console.log('✓ DATA MIGRATION COMPLETED SUCCESSFULLY!');
     console.log('='.repeat(60));
-    console.log(`Total products migrated: ${processedCount}`);
-    console.log(`DynamoDB Table: ${PRODUCTS_TABLE}`);
-    console.log('='.repeat(60));
+    
   } catch (error) {
     console.error('\n' + '✗'.repeat(60));
     console.error('Migration failed with error:');
@@ -218,8 +234,6 @@ async function migrateData() {
  */
 async function verifyMigration() {
   console.log('\nVerifying migration...');
-
-  const { ScanCommand } = require('@aws-sdk/lib-dynamodb');
 
   try {
     const result = await docClient.send(

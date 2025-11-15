@@ -2,17 +2,24 @@
     "name": "progetto-completo",
     "version": "1.0.0",
     "scripts": {
-      "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\" \"npm run start:frontend-catalogo\"",
-      "start:backend": "cd backend-api && npm start",
-      "start:schede-tecniche": "cd frontend-schede-tecniche-admin && npm start",
-      "start:catalogo-prodotti": "cd frontend-catalogo-utente && PORT=3006 npm start",
-      "start:gestore-prodotti": "cd frontend-gestore-prodotti-admin && npm start",
-      "start:frontend-catalogo": "cd frontend-catalogo-admin && PORT=3007 npm start"
+        "start": "concurrently \"npm run start:backend\" \"npm run start:schede-tecniche\" \"npm run start:catalogo-prodotti\" \"npm run start:gestore-prodotti\" \"npm run start:frontend-catalogo\"",
+        "start:backend": "cd backend-api && npm start",
+        "start:schede-tecniche": "cd frontend-schede-tecniche-admin && npm start",
+        "start:catalogo-prodotti": "cd frontend-catalogo-utente && PORT=3006 npm start",
+        "start:gestore-prodotti": "cd frontend-gestore-prodotti-admin && npm start",
+        "start:frontend-catalogo": "cd frontend-catalogo-admin && PORT=3007 npm start"
     },
     "devDependencies": {
-      "concurrently": "^8.2.2"
+        "concurrently": "^8.2.2"
     },
     "dependencies": {
-      "react-icons": "^5.5.0"
+        "@aws-sdk/client-dynamodb": "^3.932.0",
+        "@aws-sdk/client-s3": "^3.932.0",
+        "@aws-sdk/lib-dynamodb": "^3.932.0",
+        "axios": "^1.13.2",
+        "dotenv": "^17.2.3",
+        "mongodb": "^6.21.0",
+        "react-icons": "^5.5.0",
+        "uuid": "^13.0.0"
     }
-  }
+}
