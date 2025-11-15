@@ -3,15 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
-import { useLanguage } from '../context/LanguageContext'; // Importa useLanguage
-import productService from '../services/productService'; // Importa productService come default
-import categoryService from '../services/categoryService'; // Importa categoryService come default
-import './CategoryPage.css';
+import { useLanguage } from '../context/LanguageContext';
+import productService from '../services/productService';
+import categoryService from '../services/categoryService';
+import './CatalogPage.css'; // Corretto il nome del CSS
 
-const CategoryPage = () => {
+const CatalogPage = () => {
   const navigate = useNavigate();
   const { categoryId, subcategoryId } = useParams();
-  const { language, t } = useLanguage(); // Ottieni la lingua corrente e la funzione di traduzione
+  const { language, t } = useLanguage();
   const [products, setProducts] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,43 +21,38 @@ const CategoryPage = () => {
     sort: 'name-asc'
   });
   
-  // Funzione stabile per gestire i cambiamenti nei filtri
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(prevFilters => {
-      // Verifica che i nuovi filtri siano effettivamente diversi
       const hasChanges = Object.keys(newFilters).some(
         key => prevFilters[key] !== newFilters[key]
       );
       
-      // Se non ci sono cambiamenti, restituisci lo stato precedente invariato
       if (!hasChanges) return prevFilters;
       
-      // Altrimenti, aggiorna i filtri
       return { ...prevFilters, ...newFilters };
     });
   }, []);
 
-  // Carica i prodotti e le sottocategorie
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         let productsData;
-        let subcategoriesData = [];
         
         if (subcategoryId && categoryId) {
           productsData = await productService.getProductsBySubcategory(categoryId, subcategoryId, language);
-          subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
+          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
+          setSubcategories(subcategoriesData || []);
         } else if (categoryId) {
           productsData = await productService.getProductsByCategory(categoryId, language);
-          subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
+          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
+          setSubcategories(subcategoriesData || []);
         } else {
           productsData = await productService.getAllProducts(language);
         }
         
-        setProducts(productsData || []);
-        setSubcategories(subcategoriesData || []);
-        
+        console.log('ProductsData received:', productsData);
+        setProducts(Array.isArray(productsData) ? productsData : []);
         setLoading(false);
       } catch (err) {
         console.error('Error fetching category data:', err);
@@ -69,46 +64,55 @@ const CategoryPage = () => {
     fetchData();
   }, [categoryId, subcategoryId, language]);
 
-  // Applicazione dei filtri di ricerca e ordinamento
   const filteredProducts = useMemo(() => {
     console.log("Filtering products, total:", products?.length || 0, products);
     
     if (!Array.isArray(products) || products.length === 0) {
+      console.log("No products to filter");
       return [];
     }
     
-    // Filtra solo per ricerca testuale
     const filtered = products
       .filter(product => {
-        // Skip prodotti nulli o undefined
-        if (!product) return false;
+        if (!product) {
+          console.log("Skipping null/undefined product");
+          return false;
+        }
         
-        // Filtra solo per testo di ricerca, se presente
         if (filters.search && typeof filters.search === 'string' && filters.search.trim() !== '') {
           const searchTerm = filters.search.toLowerCase();
-          const productName = typeof product.nome === 'string' ? product.nome.toLowerCase() : '';
-          const productCode = typeof product.codice === 'string' ? product.codice.toLowerCase() : '';
+          const productName = (product.nome && typeof product.nome === 'string') ? product.nome.toLowerCase() : '';
+          const productCode = (product.codice && typeof product.codice === 'string') ? product.codice.toLowerCase() : '';
           
-          // Cerca sia nel nome che nel codice
           return productName.includes(searchTerm) || productCode.includes(searchTerm);
         }
         
-        // Se non c'è filtro di ricerca, includi il prodotto
         return true;
       })
       .sort((a, b) => {
         if (!a || !b) return 0;
         
-        // Ordina in base al criterio selezionato
         switch (filters.sort) {
-          case 'name-asc':
-            return (a.nome || '').localeCompare(b.nome || '');
-          case 'name-desc':
-            return (b.nome || '').localeCompare(a.nome || '');
-          case 'price-asc':
-            return (a.prezzo || 0) - (b.prezzo || 0);
-          case 'price-desc':
-            return (b.prezzo || 0) - (a.prezzo || 0);
+          case 'name-asc': {
+            const nameA = (a.nome && typeof a.nome === 'string') ? a.nome : '';
+            const nameB = (b.nome && typeof b.nome === 'string') ? b.nome : '';
+            return nameA.localeCompare(nameB);
+          }
+          case 'name-desc': {
+            const nameA = (a.nome && typeof a.nome === 'string') ? a.nome : '';
+            const nameB = (b.nome && typeof b.nome === 'string') ? b.nome : '';
+            return nameB.localeCompare(nameA);
+          }
+          case 'price-asc': {
+            const priceA = (typeof a.prezzo === 'number') ? a.prezzo : 0;
+            const priceB = (typeof b.prezzo === 'number') ? b.prezzo : 0;
+            return priceA - priceB;
+          }
+          case 'price-desc': {
+            const priceA = (typeof a.prezzo === 'number') ? a.prezzo : 0;
+            const priceB = (typeof b.prezzo === 'number') ? b.prezzo : 0;
+            return priceB - priceA;
+          }
           default:
             return 0;
         }
@@ -118,10 +122,9 @@ const CategoryPage = () => {
     return filtered;
   }, [products, filters.search, filters.sort]);
 
-  // Gestisci errori fatali
   if (error && !loading) {
     return (
-      <div className="category-page error-page">
+      <div className="catalog-page error-page">
         <div className="container">
           <h2>{t('error_occurred')}</h2>
           <p>{error.message || t('error_loading_data')}</p>
@@ -136,61 +139,16 @@ const CategoryPage = () => {
     );
   }
 
-  console.log("Rendering CategoryPage with:", {
-    categoryId,
-    subcategoryId,
-    productsCount: filteredProducts.length,
-    subcategoriesCount: subcategories.length,
-    loading
-  });
-
-  // Funzione per codificare in modo sicuro i parametri nell'URL
   const encodeUrlParam = (param) => {
     return encodeURIComponent(param);
   };
 
   return (
-    <div className="category-page">
+    <div className="catalog-page">
       <div className="container">
-        <div className="breadcrumb">
-          <Link to="/">{t('home')}</Link> / 
-          <Link to="/catalogo">{t('catalog')}</Link>
-          {categoryId && (
-            <>
-              {' / '}
-              <Link to={`/catalogo/categoria/${encodeUrlParam(categoryId)}`}>{categoryId}</Link>
-            </>
-          )}
-          {subcategoryId && (
-            <>
-              {' / '}
-              <span>{subcategoryId}</span>
-            </>
-          )}
-        </div>
-        
-        <div className="category-header">
-          <h1>
-            {subcategoryId 
-              ? subcategoryId
-              : categoryId 
-                ? categoryId
-                : t('all_products')}
-          </h1>
-          
-          {categoryId && subcategories && subcategories.length > 0 && !subcategoryId && (
-            <div className="subcategories-list">
-              {subcategories.map(subcategory => (
-                <Link 
-                  key={`subcategory-${subcategory}`} 
-                  to={`/catalogo/categoria/${encodeUrlParam(categoryId)}/sottocategoria/${encodeUrlParam(subcategory)}`}
-                  className="subcategory-link"
-                >
-                  {subcategory}
-                </Link>
-              ))}
-            </div>
-          )}
+        <div className="catalog-header">
+          <h1>{t('catalog')}</h1>
+          <p>Esplora tutti i nostri prodotti per l'igiene e la pulizia</p>
         </div>
         
         <div className="catalog-layout">
@@ -221,4 +179,4 @@ const CategoryPage = () => {
   );
 };
 
-export default CategoryPage;
+export default CatalogPage;

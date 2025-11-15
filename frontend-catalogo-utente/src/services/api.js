@@ -1,15 +1,16 @@
 import axios from 'axios';
 
-// AWS API Gateway URL (set via environment variable in Amplify Console)
-const API_URL = process.env.REACT_APP_API_BASE_URL || 'https://your-api-gateway.execute-api.eu-west-1.amazonaws.com/production/api/public/catalogo';
+// AWS API Gateway URL base - solo il dominio e production
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://nnk37tr17e.execute-api.eu-west-1.amazonaws.com/production';
 
 console.group('🔍 API Configuration');
-console.log('Using API URL:', API_URL);
+console.log('Using API Base URL:', API_BASE_URL);
+console.log('Environment:', process.env.NODE_ENV);
 console.groupEnd();
 
 const api = axios.create({
-  baseURL: API_URL,
-  timeout: 30000, // Increased for Lambda cold starts
+  baseURL: API_BASE_URL,
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json'
@@ -37,12 +38,7 @@ api.interceptors.response.use(
     console.log('Data Length:', JSON.stringify(response.data).length);
     console.groupEnd();
 
-    // AWS API Gateway wraps responses in { success: true, data: {...} }
-    // Extract the data field if present
-    if (response.data && response.data.success === true && response.data.data) {
-      return response.data.data;
-    }
-
+    // Le API AWS restituiscono i dati direttamente, non wrapped
     return response.data;
   },
   (error) => {
@@ -52,6 +48,8 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('Response Status:', error.response.status);
       console.error('Response Data:', error.response.data);
+    } else if (error.request) {
+      console.error('Network Error - No response received');
     }
 
     console.groupEnd();

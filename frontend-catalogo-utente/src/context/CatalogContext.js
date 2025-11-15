@@ -29,10 +29,11 @@ export const CatalogProvider = ({ children }) => {
         setLoading(true);
         
         // Fetch products and categories in parallel
+        // (La logica qui è corretta e usa i service giusti)
         const [productsData, categoriesData, subcategoriesData] = await Promise.all([
           productService.getAllProducts(language),
           categoryService.getAllCategories(language),
-          categoryService.getAllSubcategories(language)
+          categoryService.getAllSubcategories(language) // Ora questo endpoint esiste
         ]);
         
         setProducts(productsData);
@@ -158,21 +159,10 @@ export const CatalogProvider = ({ children }) => {
     }
   };
 
-  // Add a new subcategory
-  const addSubcategory = async (category, subcategoryName) => {
-    try {
-      const data = await categoryService.addSubcategory(category, subcategoryName);
-      // Update subcategories state
-      setSubcategories(prev => ({
-        ...prev,
-        [category]: data
-      }));
-      return data;
-    } catch (err) {
-      console.error(`Error adding subcategory to category ${category}:`, err);
-      throw err;
-    }
-  };
+  // ========================================================
+  // FUNZIONE 'addSubcategory' RIMOSSA
+  // Era una funzione admin rimasta per errore in questo file
+  // ========================================================
 
   // Clear all filters
   const clearFilters = () => {
@@ -197,7 +187,7 @@ export const CatalogProvider = ({ children }) => {
     getProductById,
     getCategoryById,
     getSubcategoriesByCategory,
-    addSubcategory,
+    // --- 'addSubcategory' rimosso da qui ---
     clearFilters
   };
 

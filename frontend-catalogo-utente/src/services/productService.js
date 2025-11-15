@@ -1,127 +1,50 @@
+// productService.js
 import api from './api';
 
 const productService = {
-  // Get all products in the catalog
+  // Get all products
   getAllProducts: async (lang = 'it') => {
     try {
-      const response = await api.get(`/public/catalogo/prodotti?lang=${lang}`);
-      return response;
+      return await api.get(`/prodotti?lang=${lang}`);
     } catch (error) {
-      console.error('Error fetching products:', error);
+      console.error('Error fetching all products:', error);
       throw error;
     }
   },
-  
 
+  // Get a single product by ID
   getProductById: async (productId, lang = 'it') => {
     try {
-      const response = await api.get(`/public/catalogo/prodotti/${productId}?lang=${lang}`);
-      console.log("Prodotto ricevuto:", response);
-      return response;
+      return await api.get(`/prodotti/${productId}?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching product with ID ${productId}:`, error);
       throw error;
     }
   },
 
-  // Get products by category from the catalog endpoints
+  // Get products by category
   getProductsByCategory: async (category, lang = 'it') => {
     try {
-      return await api.get(`/public/catalogo/categoria/${category}?lang=${lang}`);
+      // CORREZIONE: Rimosso '/prodotti' finale
+      // La rotta corretta è /categoria/{nome}, non /categoria/{nome}/prodotti
+      return await api.get(`/categoria/${category}?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching products for category ${category}:`, error);
       throw error;
     }
   },
 
-
-  // Get products by subcategory from the catalog endpoints
+  // Get products by subcategory
   getProductsBySubcategory: async (category, subcategory, lang = 'it') => {
     try {
-      return await api.get(`/public/catalogo/categoria/${category}/sottocategoria/${subcategory}?lang=${lang}`);
+      // CORREZIONE: Rimosso '/prodotti' finale
+      // La rotta corretta è /categoria/{nome}/sottocategoria/{subnome}
+      return await api.get(`/categoria/${category}/sottocategoria/${subcategory}?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching products for subcategory ${subcategory}:`, error);
       throw error;
     }
   },
-  
-   // Create a new product
-   createProduct: async (productData) => {
-    try {
-      const formData = new FormData();
-      
-      for (const key in productData) {
-        if (key !== 'immagini') {
-          formData.append(key, productData[key]);
-        }
-      }
-      
-      if (productData.immagini && Array.isArray(productData.immagini)) {
-        productData.immagini.forEach((image, index) => {
-          formData.append('immagini', image);
-        });
-      }
-      
-      const response = await api.post('/prodottiCatalogo/prodotti', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      return response;
-    } catch (error) {
-      console.error('Error creating product:', error);
-      throw error;
-    }
-  },
-  
-  // Update a product
-  updateProduct: async (productId, productData) => {
-    try {
-      const formData = new FormData();
-      
-      for (const key in productData) {
-        if (key !== 'immagini' && key !== 'immaginiToRemove') {
-          formData.append(key, productData[key]);
-        }
-      }
-      
-      if (productData.immaginiToRemove && Array.isArray(productData.immaginiToRemove)) {
-        productData.immaginiToRemove.forEach(imageUrl => {
-          formData.append('immaginiToRemove', imageUrl);
-        });
-      }
-      
-      if (productData.immagini && Array.isArray(productData.immagini)) {
-        productData.immagini.forEach(image => {
-          if (image instanceof File) {
-            formData.append('immagini', image);
-          }
-        });
-      }
-      
-      const response = await api.put(`/prodottiCatalogo/prodotti/${productId}`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-      
-      return response;
-    } catch (error) {
-      console.error(`Error updating product with ID ${productId}:`, error);
-      throw error;
-    }
-  },
-  
-  // Delete a product
-  deleteProduct: async (productId) => {
-    try {
-      return await api.delete(`/prodottiCatalogo/prodotti/${productId}`);
-    } catch (error) {
-      console.error(`Error deleting product with ID ${productId}:`, error);
-      throw error;
-    }
-  }
 };
 
 export default productService;

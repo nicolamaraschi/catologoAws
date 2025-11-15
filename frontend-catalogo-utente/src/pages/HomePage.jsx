@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
 import ProductCard from '../components/products/ProductCard';
 import { FaHome, FaIndustry } from 'react-icons/fa';
 import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
 import { useLanguage } from '../context/LanguageContext';
+import productService from '../services/productService';
+import categoryService from '../services/categoryService';
 import './HomePage.css';
 
 const HomePage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories] = useState([
     { id: 'Domestico', name: t('domestic'), icon: <FaHome size={32} /> },
@@ -23,20 +24,21 @@ const HomePage = () => {
       try {
         setLoading(true);
         
-        // Fetch all products and select a few for the featured section
-        const productsResponse = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/prodotti');
+        // Fetch all products using the service
+        const allProducts = await productService.getAllProducts(language);
         
         // Take 4 random products or fewer if there are less than 4
-        const allProducts = productsResponse.data;
-        const randomProducts = allProducts
-          .sort(() => 0.5 - Math.random())
-          .slice(0, Math.min(4, allProducts.length));
+        const randomProducts = Array.isArray(allProducts) ? 
+          allProducts
+            .sort(() => 0.5 - Math.random())
+            .slice(0, Math.min(4, allProducts.length)) :
+          [];
         
         setFeaturedProducts(randomProducts);
         
-        // Fetch subcategories
-        const subcategoriesResponse = await axios.get('https://orsi-production.up.railway.app/api/prodottiCatalogo/sottocategorie');
-        setSubcategories(subcategoriesResponse.data || {});
+        // Fetch subcategories using the service
+        const subcategoriesData = await categoryService.getAllSubcategories(language);
+        setSubcategories(subcategoriesData || {});
         
         setLoading(false);
       } catch (err) {
@@ -47,7 +49,7 @@ const HomePage = () => {
     };
     
     fetchData();
-  }, []);
+  }, [language]); // Aggiungi language come dependency
 
   // Funzione per codificare in modo sicuro i parametri nell'URL
   const encodeUrlParam = (param) => {
@@ -94,7 +96,7 @@ const HomePage = () => {
           ) : (
             <div className="featured-products">
               {featuredProducts.map((product) => (
-                <div key={product._id} className="featured-product-item">
+                <div key={product._id || product.id} className="featured-product-item">
                   <ProductCard product={product} />
                 </div>
               ))}

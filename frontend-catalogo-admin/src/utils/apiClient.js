@@ -7,7 +7,7 @@ import axios from 'axios';
 import { fetchAuthSession } from 'aws-amplify/auth';
 
 // API Base URL from environment variable
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://your-api-gateway.execute-api.eu-west-1.amazonaws.com/production/api/admin';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 // Create axios instance
 const apiClient = axios.create({
@@ -24,7 +24,12 @@ apiClient.interceptors.request.use(
     try {
       // Get current session from Cognito
       const session = await fetchAuthSession();
-      const token = session.tokens?.idToken?.toString();
+      
+      // ==========================================================
+      // CORREZIONE CRITICA: USARE 'accessToken', NON 'idToken'
+      // L'API Gateway Authorizer valida l'Access Token.
+      // ==========================================================
+      const token = session.tokens?.accessToken?.toString();
 
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -32,7 +37,8 @@ apiClient.interceptors.request.use(
 
       return config;
     } catch (error) {
-      console.error('Failed to get auth session:', error);
+      console.warn('Failed to get auth session (user might be logged out):', error);
+      // Continua senza token. Se la rotta è protetta, fallirà (correttamente)
       return config;
     }
   },
@@ -54,13 +60,14 @@ apiClient.interceptors.response.use(
       });
 
       // Handle 401 Unauthorized
-      if (error.response.status === 401) {
-        console.error('Unauthorized - Token may be expired');
-        // Optionally trigger logout or token refresh
+      if (error.response.status === 401 || error.response.status === 403) {
+        console.error('Unauthorized/Forbidden - Token may be expired or invalid.');
+        // Qui potresti voler reindirizzare al login
+        // window.location.href = '/login';
       }
     } else if (error.request) {
       // Request was made but no response
-      console.error('Network Error: No response received');
+      console.error('Network Error: No response received. Is the API_BASE_URL correct?');
     } else {
       // Something else happened
       console.error('Request Error:', error.message);

@@ -2,24 +2,11 @@
 import api from './api';
 
 const categoryService = {
-  // Metodo di test per la connessione
-  testConnection: async () => {
-    try {
-      console.log('Tentativo di connessione API');
-      const result = await api.get('/prodottiCatalogo/sottocategorie');
-      console.log('Connessione riuscita:', result);
-      return result;
-    } catch (error) {
-      console.error('Errore di connessione:', error);
-      throw error;
-    }
-  },
-
   // Get all categories
   getAllCategories: async (lang = 'it') => {
     try {
-      console.log('Fetching categories from: /public/catalogo/categorie');
-      const result = await api.get(`/public/catalogo/categorie?lang=${lang}`);
+      console.log('Fetching categories from: /categorie');
+      const result = await api.get(`/categorie?lang=${lang}`);
       console.log('Categories fetched:', result);
       return result;
     } catch (error) {
@@ -32,7 +19,8 @@ const categoryService = {
   getCategoryById: async (categoryId, lang = 'it') => {
     try {
       console.log(`Fetching category with ID: ${categoryId}`);
-      const result = await api.get(`/public/catalogo/categorie/${categoryId}?lang=${lang}`);
+      // Questo endpoint lo abbiamo aggiunto nel template.yaml
+      const result = await api.get(`/categorie/${categoryId}?lang=${lang}`);
       console.log('Category fetched:', result);
       return result;
     } catch (error) {
@@ -44,8 +32,9 @@ const categoryService = {
   // Get all subcategories in the catalog
   getAllSubcategories: async (lang = 'it') => {
     try {
-      console.log('Fetching all subcategories');
-      const result = await api.get(`/public/catalogo/sottocategorie?lang=${lang}`);
+      console.log('Fetching all subcategories from: /sottocategorie');
+      // Questo endpoint lo abbiamo aggiunto nel template.yaml
+      const result = await api.get(`/sottocategorie?lang=${lang}`);
       console.log('Subcategories fetched:', result);
       return result;
     } catch (error) {
@@ -57,46 +46,14 @@ const categoryService = {
   // Get subcategories for a specific category
   getSubcategoriesByCategory: async (category, lang = 'it') => {
     try {
-      return await api.get(`/public/catalogo/categoria/${category}/sottocategorie?lang=${lang}`);
+      console.log(`Fetching subcategories for category: ${category}`);
+      // Questo endpoint ora è gestito dalla nuova CategoriesTable
+      return await api.get(`/categoria/${category}/sottocategorie?lang=${lang}`);
     } catch (error) {
       console.error(`Error fetching subcategories for category ${category}:`, error);
       throw error;
     }
   },
-  
-  // Add a new subcategory to a category
-  addSubcategory: async (category, subcategoryName) => {
-    try {
-      return await api.post(`/prodottiCatalogo/categoria/${category}/sottocategorie`, {
-        sottocategoria: subcategoryName
-      });
-    } catch (error) {
-      console.error(`Error adding subcategory to category ${category}:`, error);
-      throw error;
-    }
-  },
-  
-  // Update a subcategory name
-  updateSubcategory: async (category, subcategory, newName) => {
-    try {
-      return await api.put(`/prodottiCatalogo/categoria/${category}/sottocategoria/${subcategory}`, {
-        nuovoNome: newName
-      });
-    } catch (error) {
-      console.error(`Error updating subcategory ${subcategory}:`, error);
-      throw error;
-    }
-  },
-  
-  // Delete a subcategory
-  deleteSubcategory: async (category, subcategory) => {
-    try {
-      return await api.delete(`/prodottiCatalogo/categoria/${category}/sottocategoria/${subcategory}`);
-    } catch (error) {
-      console.error(`Error deleting subcategory ${subcategory}:`, error);
-      throw error;
-    }
-  }
 };
 
 export default categoryService;
