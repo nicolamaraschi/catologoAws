@@ -1,0 +1,67 @@
+version: 1
+#############################################################################
+# AWS Amplify Build Configuration
+# Frontend Catalogo Utente (Public Catalog - No Authentication)
+#############################################################################
+
+# Environment variables (set in Amplify Console)
+# REACT_APP_API_BASE_URL - API Gateway URL from CloudFormation outputs
+# REACT_APP_CLOUDFRONT_URL - CloudFront URL for images
+
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - echo "Installing dependencies for frontend-catalogo-utente..."
+        - npm ci
+        - echo "Environment - API Base URL is $REACT_APP_API_BASE_URL"
+    build:
+      commands:
+        - echo "Building React application..."
+        - npm run build
+        - echo "Build completed successfully"
+  artifacts:
+    baseDirectory: build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+
+# Custom headers for security and performance
+customHeaders:
+  - pattern: '**/*'
+    headers:
+      - key: 'X-Frame-Options'
+        value: 'DENY'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'X-XSS-Protection'
+        value: '1; mode=block'
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      - key: 'Permissions-Policy'
+        value: 'geolocation=(), microphone=(), camera=()'
+  - pattern: '*.js'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '*.css'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  - pattern: '*.jpg'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400'
+  - pattern: '*.png'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400'
+
+# Redirect rules for SPA routing
+redirects:
+  - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>'
+    target: '/index.html'
+    status: '200'
+    condition: null
