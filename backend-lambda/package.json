@@ -6,7 +6,8 @@
   "scripts": {
     "test": "jest",
     "lint": "eslint src/",
-    "migrate": "node scripts/migrate-mongodb-to-dynamodb.js"
+    "migrate": "node scripts/migrate-mongodb-to-dynamodb.js",
+    "migrate-images": "node scripts/migrate-images-to-s3.js"
   },
   "keywords": [
     "aws",
@@ -28,6 +29,7 @@
   },
   "devDependencies": {
     "mongodb": "^6.10.0",
+    "axios": "^1.7.7",
     "dotenv": "^16.4.5"
   }
 }

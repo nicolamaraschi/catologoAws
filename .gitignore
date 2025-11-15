@@ -71,3 +71,7 @@ amplify-meta.json
 .serverless/
 *.zip
 *.tar.gz
+
+# Deployment outputs
+deployment-outputs.env
+stack-outputs-backup-*.json
