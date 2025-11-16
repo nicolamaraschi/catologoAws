@@ -1,298 +1,162 @@
-// frontend-catalogo-admin/src/pages/ViewProducts.js
-import React, { useEffect, useState } from 'react';
-import { getAllProdotti, deleteProdotto, getSubcategoriesByCategory } from '../api';
-import './ViewProducts.css';
-import { Button, Form, Card, Row, Col, Badge, Accordion, Container, Alert } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { Container, Card, Table, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
+import { getAllProdotti, getAllCategories, deleteProdotto } from '../api';
+// import { getSubcategoriesByCategory } from '../api'; // Non usato nel filtro base
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  // const [subcategories, setSubcategories] = useState([]);
+  
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategoria, setFilterCategoria] = useState('');
-  const [filterSottocategoria, setFilterSottocategoria] = useState('');
-  const [sottocategorieFiltrate, setSottocategorieFiltrate] = useState([]);
+  const [error, setError] = useState('');
   
-  // Categorie principali (solo Domestico e Industriale)
-  const categoriePrincipali = ['Domestico', 'Industriale'];
-  
-  // Mappa delle sottocategorie per categoria
-  const [sottocategorieMap, setSottocategorieMap] = useState({
-    'Domestico': [],
-    'Industriale': []
-  });
+  // Stati per i filtri
+  const [filterText, setFilterText] = useState('');
+  const [filterCategory, setFilterCategory] = useState('');
+  // const [filterSubcategory, setFilterSubcategory] = useState('');
 
-  // Carica i prodotti dal backend
   useEffect(() => {
-    const fetchProducts = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const data = await getAllProdotti();
-        setProducts(data);
+        setError('');
         
-        // Estrai tutte le sottocategorie dai prodotti
-        const sottocategoriePerCategoria = {
-          'Domestico': [],
-          'Industriale': []
-        };
+        // Carica prodotti e categorie in parallelo
+        const [productsData, categoriesData] = await Promise.all([
+          getAllProdotti(),
+          getAllCategories()
+        ]);
         
-        // Raccogliamo le sottocategorie uniche per ogni categoria
-        for (const categoria of categoriePrincipali) {
-          try {
-            const sottocategorie = await getSubcategoriesByCategory(categoria);
-            if (Array.isArray(sottocategorie)) {
-              sottocategoriePerCategoria[categoria] = sottocategorie;
-            }
-          } catch (error) {
-            console.error(`Errore nel recupero delle sottocategorie per ${categoria}:`, error);
-          }
-        }
+        setProducts(productsData || []);
+        setCategories(categoriesData || []);
         
-        setSottocategorieMap(sottocategoriePerCategoria);
         setLoading(false);
-      } catch (error) {
-        console.error('Errore durante il recupero dei prodotti:', error);
-        setError('Errore durante il recupero dei prodotti');
+      } catch (err) {
+        console.error("Errore nel caricamento dei dati:", err);
+        setError("Impossibile caricare i dati. " + err.message);
         setLoading(false);
       }
     };
-
-    fetchProducts();
+    loadData();
   }, []);
 
-  // Aggiorna le sottocategorie filtrate quando cambia la categoria
-  useEffect(() => {
-    if (filterCategoria) {
-      setSottocategorieFiltrate(sottocategorieMap[filterCategoria] || []);
-    } else {
-      setSottocategorieFiltrate([]);
-    }
-    // Resetta il filtro della sottocategoria quando cambia la categoria
-    setFilterSottocategoria('');
-  }, [filterCategoria, sottocategorieMap]);
-
-  // Gestisce la cancellazione di un prodotto
-  const handleDelete = async (id) => {
-    if (window.confirm('Sei sicuro di voler eliminare questo prodotto?')) {
+  // Gestore per la cancellazione
+  const handleDelete = async (productId, productName) => {
+    if (window.confirm(`Sei sicuro di voler eliminare il prodotto: ${productName}?`)) {
       try {
-        await deleteProdotto(id);
-        setProducts(products.filter((product) => product._id !== id));
-        alert('Prodotto eliminato con successo!');
-      } catch (error) {
-        console.error('Errore durante l\'eliminazione del prodotto:', error);
-        alert('Errore durante l\'eliminazione del prodotto');
+        await deleteProdotto(productId);
+        // Rimuovi il prodotto dallo stato per aggiornare la UI
+        setProducts(products.filter(p => p.productId !== productId));
+      } catch (err) {
+        setError("Errore durante l'eliminazione: " + err.message);
       }
     }
   };
 
-  // Filtra i prodotti in base a ricerca, categoria e sottocategoria
-  const filteredProducts = products.filter((product) => {
-    // Filtra per termine di ricerca
-    const matchesSearch = 
-      !searchTerm || 
-      (product.nome && product.nome.toLowerCase().includes(searchTerm.toLowerCase())) || 
-      (product.codice && product.codice.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    // Filtra per categoria
-    const matchesCategoria = !filterCategoria || product.categoria === filterCategoria;
-    
-    // Filtra per sottocategoria
-    const matchesSottocategoria = !filterSottocategoria || product.sottocategoria === filterSottocategoria;
-    
-    return matchesSearch && matchesCategoria && matchesSottocategoria;
-  });
-
-  // Raggruppa i prodotti per categoria
-  const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const categoria = product.categoria || 'Non categorizzato';
-    if (!acc[categoria]) {
-      acc[categoria] = [];
-    }
-    acc[categoria].push(product);
-    return acc;
-  }, {});
-
-  // Formatta il tipo di unità di imballaggio per la visualizzazione
-  const formatPackagingInfo = (product) => {
-    if (!product.tipoImballaggio) return 'N/A';
-    
-    return `${product.tipoImballaggio} (${product.pezziPerCartone || 0} pz/cartone, ${product.cartoniPerEpal || 0} cart/epal, ${product.pezziPerEpal || 0} pz/epal)`;
-  };
-
-  if (loading) {
-    return (
-      <Container className="mt-5 text-center">
-        <div className="spinner-border text-primary" role="status">
-          <span className="visually-hidden">Caricamento...</span>
-        </div>
-        <p className="mt-3">Caricamento prodotti in corso...</p>
-      </Container>
-    );
-  }
-
-  if (error) {
-    return (
-      <Container className="mt-4">
-        <Alert variant="danger">
-          {error}
-        </Alert>
-      </Container>
-    );
-  }
+  // Logica di filtraggio
+  const filteredProducts = products
+    .filter(product => {
+      const nomeIt = product.nome?.it || '';
+      return nomeIt.toLowerCase().includes(filterText.toLowerCase());
+    })
+    .filter(product => {
+      if (filterCategory === '') return true;
+      const catIt = product.categoria?.it || '';
+      return catIt === filterCategory;
+    });
 
   return (
-    <Container className="mt-4">
-      <h1 className="mb-4">Catalogo Prodotti</h1>
-      
-      {/* Filtri */}
-      <Card className="mb-4">
+    <Container className="my-4">
+      <Card className="shadow-sm">
+        <Card.Header className="bg-light">
+          <h2 className="mb-0">Gestione Prodotti</h2>
+        </Card.Header>
         <Card.Body>
-          <Row>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Cerca prodotto</Form.Label>
+          {error && <Alert variant="danger">{error}</Alert>}
+          
+          {/* Filtri */}
+          <Row className="mb-3">
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Filtra per nome</Form.Label>
                 <Form.Control 
-                  type="text" 
-                  placeholder="Cerca per nome o codice" 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  type="text"
+                  placeholder="Cerca prodotto..."
+                  value={filterText}
+                  onChange={(e) => setFilterText(e.target.value)}
                 />
               </Form.Group>
             </Col>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Filtra per categoria</Form.Label>
+            <Col md={6}>
+              <Form.Group>
+                <Form.Label>Filtra per Categoria</Form.Label>
                 <Form.Select
-                  value={filterCategoria}
-                  onChange={(e) => setFilterCategoria(e.target.value)}
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
                 >
                   <option value="">Tutte le categorie</option>
-                  {categoriePrincipali.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            </Col>
-            <Col md={4}>
-              <Form.Group className="mb-3">
-                <Form.Label>Filtra per sottocategoria</Form.Label>
-                <Form.Select
-                  value={filterSottocategoria}
-                  onChange={(e) => setFilterSottocategoria(e.target.value)}
-                  disabled={!filterCategoria || sottocategorieFiltrate.length === 0}
-                >
-                  <option value="">Tutte le sottocategorie</option>
-                  {sottocategorieFiltrate.map((subcat) => (
-                    <option key={subcat} value={subcat}>{subcat}</option>
+                  {/* 1. FIX: Aggiunto 'index' al map e usato nella key */}
+                  {categories.map((cat, index) => (
+                    <option key={cat.categoryName || index} value={cat.translations?.it}>
+                      {cat.translations?.it || cat.categoryName}
+                    </option>
                   ))}
                 </Form.Select>
               </Form.Group>
             </Col>
           </Row>
-        </Card.Body>
-      </Card>
-      
-      {/* Visualizzazione prodotti raggruppati */}
-      {Object.keys(groupedProducts).length === 0 ? (
-        <Alert variant="info">
-          Nessun prodotto trovato {searchTerm ? `per la ricerca "${searchTerm}"` : ''} 
-          {filterCategoria ? ` nella categoria "${filterCategoria}"` : ''} 
-          {filterSottocategoria ? ` con sottocategoria "${filterSottocategoria}"` : ''}
-        </Alert>
-      ) : (
-        <Accordion defaultActiveKey="0" alwaysOpen className="mb-4">
-          {Object.entries(groupedProducts).map(([categoria, products], index) => (
-            <Accordion.Item eventKey={String(index)} key={categoria}>
-              <Accordion.Header>
-                <span className="fw-bold">{categoria}</span>
-                <Badge bg="secondary" className="ms-2">{products.length} prodotti</Badge>
-              </Accordion.Header>
-              <Accordion.Body>
-                <div className="table-responsive">
-                  <table className="table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th>Codice</th>
-                        <th>Nome</th>
-                        <th>Sottocategoria</th>
-                        <th>Prezzo</th>
-                        <th>Imballaggio</th>
-                        <th>Immagini</th>
-                        <th>Azioni</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {products.map((product) => (
-                        <tr key={product._id}>
-                          <td>{product.codice || 'N/A'}</td>
-                          <td>{product.nome}</td>
-                          <td>{product.sottocategoria || 'N/A'}</td>
-                          <td>{product.prezzo} {product.unita}</td>
-                          <td>{formatPackagingInfo(product)}</td>
-                          <td>
-                            {product.immagini && product.immagini.length > 0 ? (
-                              <div className="d-flex align-items-center">
-                                {product.immagini.slice(0, 3).map((img, index) => (
-                                  <img 
-                                    key={index} 
-                                    src={img} 
-                                    alt={`${product.nome} - ${index + 1}`} 
-                                    className="img-thumbnail me-1" 
-                                    style={{ width: '50px', height: '50px', objectFit: 'cover' }} 
-                                  />
-                                ))}
-                                {product.immagini.length > 3 && (
-                                  <span className="badge bg-secondary">+{product.immagini.length - 3}</span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-muted">Nessuna immagine</span>
-                            )}
-                          </td>
-                          <td>
-                            <Button 
-                              variant="danger" 
-                              size="sm" 
-                              onClick={() => handleDelete(product._id)}
-                            >
-                              Elimina
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Accordion.Body>
-            </Accordion.Item>
-          ))}
-        </Accordion>
-      )}
 
-      {/* Statistiche */}
-      <Card className="mt-4">
-        <Card.Header className="bg-light">
-          <h5 className="mb-0">Riepilogo Catalogo</h5>
-        </Card.Header>
-        <Card.Body>
-          <Row>
-            <Col md={4} className="text-center border-end">
-              <h6>Totale Prodotti</h6>
-              <div className="fs-3">{products.length}</div>
-            </Col>
-            <Col md={4} className="text-center border-end">
-              <h6>Domestico</h6>
-              <div className="fs-3">
-                {products.filter(p => p.categoria === 'Domestico').length}
-              </div>
-            </Col>
-            <Col md={4} className="text-center">
-              <h6>Industriale</h6>
-              <div className="fs-3">
-                {products.filter(p => p.categoria === 'Industriale').length}
-              </div>
-            </Col>
-          </Row>
+          {/* Tabella Prodotti */}
+          {loading ? (
+            <div className="text-center py-5">
+              <Spinner animation="border" role="status" />
+              <p className="mt-2">Caricamento prodotti...</p>
+            </div>
+          ) : (
+            <Table striped bordered hover responsive>
+              <thead>
+                <tr>
+                  <th>Nome Prodotto</th>
+                  <th>Codice</th>
+                  <th>Categoria</th>
+                  <th>Sottocategoria</th>
+                  <th>Prezzo</th>
+                  <th>Azioni</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredProducts.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center text-muted">Nessun prodotto trovato.</td>
+                  </tr>
+                ) : (
+                  filteredProducts.map(product => (
+                    <tr key={product.productId}>
+                      <td>{product.nome?.it || product.productId}</td>
+                      <td>{product.codice}</td>
+                      <td>{product.categoria?.it || 'N/D'}</td>
+                      <td>{product.sottocategoria?.it || 'N/D'}</td>
+                      <td>{product.prezzo ? `${product.prezzo.toFixed(2)} €` : 'N/D'}</td>
+                      <td>
+                        <Link to={`/edit-product/${product.productId}`} className="btn btn-primary btn-sm me-2">
+                          Modifica
+                        </Link>
+                        <Button 
+                          variant="danger" 
+                          size="sm"
+                          onClick={() => handleDelete(product.productId, product.nome?.it)}
+                        >
+                          Elimina
+                        </Button>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </Table>
+          )}
         </Card.Body>
       </Card>
     </Container>

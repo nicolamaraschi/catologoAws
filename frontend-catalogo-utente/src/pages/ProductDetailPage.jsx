@@ -9,19 +9,30 @@ import './ProductDetailPage.css';
 const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { language, t } = useLanguage(); // Destructure t from useLanguage
+  const { language, t } = useLanguage(); 
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    // 💡 FIX: Aggiungi un controllo per assicurarti che productId sia definito prima di chiamare l'API.
+    if (!productId) {
+      // Se l'ID non è presente, impostiamo immediatamente uno stato di non trovato o di errore.
+      console.error("Error: productId is undefined. Cannot fetch product.");
+      setError(new Error(t('product_not_found')));
+      setLoading(false);
+      return; // Interrompe l'esecuzione dell'useEffect
+    }
+
     const fetchProduct = async () => {
       try {
         setLoading(true);
+        // La chiamata all'API avviene solo se productId è valido
         const data = await productService.getProductById(productId, language);
         setProduct(data);
         setLoading(false);
       } catch (err) {
+        // Il tuo console.error originale è molto utile
         console.error(`Error fetching product with ID ${productId}:`, err);
         setError(err);
         setLoading(false);
@@ -29,10 +40,10 @@ const ProductDetailPage = () => {
     };
     
     fetchProduct();
-  }, [productId, language]);
+  }, [productId, language, t]); // Aggiunto 't' alle dipendenze per coerenza
 
   const handleGoBack = () => {
-    navigate(-1); // Go back to the previous page
+    navigate(-1); // Torna alla pagina precedente
   };
 
   if (loading) {

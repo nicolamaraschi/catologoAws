@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FaUser, FaLock, FaSignInAlt, FaExclamationCircle, FaInfoCircle, FaSpinner } from 'react-icons/fa';
 import './Login.css';
+// 1. IMPORTA la funzione di login dal file API centralizzato
+import { login } from '../api'; 
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -15,7 +17,6 @@ const Login = () => {
   const location = useLocation();
   
   useEffect(() => {
-    // Verifica sessione scaduta dal parametro URL
     const searchParams = new URLSearchParams(location.search);
     const sessionExpired = searchParams.get('sessionExpired');
     
@@ -23,13 +24,11 @@ const Login = () => {
       setError('La tua sessione è scaduta. Effettua nuovamente il login.');
     }
     
-    // Verifica se l'utente è già autenticato
     const token = localStorage.getItem('authToken');
     if (token) {
       navigate('/home');
     }
     
-    // Carica username salvato se "ricordami" era attivo
     const savedUsername = localStorage.getItem('rememberedUsername');
     if (savedUsername) {
       setUsername(savedUsername);
@@ -40,7 +39,6 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validazione form
     if (!username.trim() || !password.trim()) {
       setError('Inserisci username e password');
       return;
@@ -50,15 +48,10 @@ const Login = () => {
     setError('');
     
     try {
-      const response = await fetch('https://orsi-production.up.railway.app/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
+      // 2. USA la funzione di login centralizzata (niente più fetch!)
+      const data = await login(username, password);
       
-      const data = await response.json();
-      
-      if (response.ok && data.token) {
+      if (data && data.token) {
         // Gestione "ricordami"
         if (rememberMe) {
           localStorage.setItem('rememberedUsername', username);
@@ -66,6 +59,7 @@ const Login = () => {
           localStorage.removeItem('rememberedUsername');
         }
         
+        // 3. SALVA il token e naviga
         localStorage.setItem('authToken', data.token);
         navigate('/home');
       } else {
@@ -73,7 +67,9 @@ const Login = () => {
       }
     } catch (err) {
       console.error('Login error:', err);
-      setError('Errore durante il login. Riprova più tardi.');
+      // L'interceptor di Axios gestisce i 401, ma qui gestiamo altri errori
+      const errorMsg = err.response?.data?.message || 'Errore durante il login. Riprova più tardi.';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -83,6 +79,9 @@ const Login = () => {
     setIsPasswordVisible(!isPasswordVisible);
   };
 
+  // Il resto del JSX (return) rimane IDENTICO
+  // ... (copia e incolla tutto il tuo return da <div className="catalog-login-page"> in poi)
+  
   return (
     <div className="catalog-login-page">
       <div className="login-content-wrapper">

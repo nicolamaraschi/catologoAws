@@ -1,18 +1,29 @@
-// frontend-catalogo-admin/src/pages/SubcategoryManagement.js
-import React, { useState, useEffect } from 'react';
-import { Container, Card, Row, Col, Form, Button, ListGroup, Modal, Alert } from 'react-bootstrap';
-import axios from 'axios';
-
-const API_URL = 'https://orsi-production.up.railway.app/api/prodottiCatalogo';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Container, Card, Row, Col, Form, Button, ListGroup, Modal, Alert, Spinner } from 'react-bootstrap';
+import { 
+  getSubcategoriesByCategory, 
+  addSubcategory, 
+  updateSubcategory, 
+  deleteSubcategory,
+  getAllCategories
+} from '../api'; 
+// Rimuoviamo l'import di 'api' e 'axios' che servivano per il debug
+// import api from '../api'; 
+// import axios from 'axios'; 
+// import { fetchAuthSession } from 'aws-amplify/auth';
 
 const SubcategoryManagement = () => {
   // Stati per i dati
-  const [categories] = useState(['Domestico', 'Industriale']); // Categorie fisse
-  const [selectedCategory, setSelectedCategory] = useState('Domestico');
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null); // 1. Partiamo da null
   const [subcategories, setSubcategories] = useState([]);
+  
+  // Stati per i Modal
   const [newSubcategoryName, setNewSubcategoryName] = useState('');
+  const [newSubcategoryTranslations, setNewSubcategoryTranslations] = useState({ it: '', en: '', fr: '', es: '', de: '' });
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [editSubcategoryName, setEditSubcategoryName] = useState('');
+  const [editSubcategoryTranslations, setEditSubcategoryTranslations] = useState({});
   
   // Stati UI
   const [loading, setLoading] = useState(false);
@@ -22,366 +33,316 @@ const SubcategoryManagement = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
-  // Carica le sottocategorie all'avvio e quando cambia la categoria selezionata
+  // Carica le categorie all'avvio
   useEffect(() => {
-    fetchSubcategories();
-  }, [selectedCategory]);
-
-  // Funzione per caricare le sottocategorie per la categoria selezionata
-  const fetchSubcategories = async () => {
-    try {
+    const fetchCategories = async () => {
       setLoading(true);
-      const response = await axios.get(`${API_URL}/categoria/${selectedCategory}/sottocategorie`);
-      setSubcategories(response.data || []);
+      try {
+        const cats = await getAllCategories(); // 2. 'cats' è l'array di traduzioni [{it: "..."}, ...]
+        setCategories(cats || []);
+        if (cats && cats.length > 0) {
+          // 3. FIX: Usiamo 'it' come ID (es. "Domestico")
+          setSelectedCategory(cats[0].it); 
+        }
+        setLoading(false);
+      } catch (err) {
+        setError('Impossibile caricare le categorie.');
+        setLoading(false);
+      }
+    };
+    fetchCategories();
+  }, []); // Array vuoto, esegue solo al mount
+
+  // Carica le sottocategorie quando cambia la categoria selezionata
+  const fetchSubcategories = useCallback(async () => {
+    if (!selectedCategory) { // 'selectedCategory' ora è una stringa, es. "Domestico"
+      setSubcategories([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      setError('');
+      // 4. FIX: Passiamo la stringa (es. "Domestico") come ID, 
+      //    come fa il tuo script test-api.sh
+      const responseData = await getSubcategoriesByCategory(selectedCategory);
+      setSubcategories(responseData || []);
       setLoading(false);
     } catch (error) {
       console.error('Errore nel caricamento delle sottocategorie:', error);
-      setError('Impossibile caricare le sottocategorie. Riprova più tardi.');
+      setError('Impossibile caricare le sottocategorie.');
+      setSubcategories([]); 
       setLoading(false);
     }
-  };
+  }, [selectedCategory]); // Dipende da selectedCategory
 
-  // Gestisce il cambio della categoria selezionata
-  const handleCategorySelect = (category) => {
-    setSelectedCategory(category);
-  };
+  useEffect(() => {
+    fetchSubcategories();
+  }, [fetchSubcategories]);
 
-  // Apre il modal per aggiungere una sottocategoria
-  const handleAddClick = () => {
+  // Gestori selezione
+  const handleCategorySelect = (categoryName) => {
+    setSelectedCategory(categoryName);
+  };
+  
+  // Gestori Modal (ADD)
+  const handleShowAddModal = () => {
     setNewSubcategoryName('');
+    setNewSubcategoryTranslations({ it: '', en: '', fr: '', es: '', de: '' });
+    setError('');
     setShowAddModal(true);
   };
-
-  // Aggiunge una nuova sottocategoria
+  
   const handleAddSubcategory = async () => {
     if (!newSubcategoryName.trim()) {
-      setError('Il nome della sottocategoria non può essere vuoto');
+      setError('Il nome della sottocategoria (ID) non può essere vuoto');
       return;
     }
-
     try {
       setLoading(true);
-      
-      // Chiamata API per aggiungere una sottocategoria
-      await axios.post(`${API_URL}/categoria/${selectedCategory}/sottocategorie`, {
-        sottocategoria: newSubcategoryName
-      });
-      
-      // Aggiorna la lista delle sottocategorie
+      const subcategoryData = {
+        subcategoryName: newSubcategoryName,
+        translations: newSubcategoryTranslations
+      };
+      // 5. FIX: 'selectedCategory' è l'ID (es. "Domestico")
+      await addSubcategory(selectedCategory, subcategoryData);
       await fetchSubcategories();
-      
-      setNewSubcategoryName('');
       setShowAddModal(false);
       setSuccess('Sottocategoria aggiunta con successo!');
-      
-      // Nascondi il messaggio di successo dopo 3 secondi
       setTimeout(() => setSuccess(''), 3000);
-      
       setLoading(false);
     } catch (error) {
-      console.error('Errore nell\'aggiunta della sottocategoria:', error);
-      setError('Errore nell\'aggiunta della sottocategoria: ' + (error.response?.data?.message || error.message));
+      setError('Errore nell\'aggiunta: ' + (error.response?.data?.message || error.message));
       setLoading(false);
     }
   };
 
-  // Apre il modal per modificare una sottocategoria
-  const handleEditClick = (subcategory) => {
-    setSelectedSubcategory(subcategory);
-    setEditSubcategoryName(subcategory);
+  // Gestori Modal (EDIT)
+  const handleShowEditModal = (sub) => {
+    setSelectedSubcategory(sub.subcategoryName);
+    setEditSubcategoryName(sub.subcategoryName);
+    setEditSubcategoryTranslations(sub.translations || { it: '', en: '', fr: '', es: '', de: '' });
+    setError('');
     setShowEditModal(true);
   };
-
-  // Modifica una sottocategoria esistente
+  
   const handleEditSubcategory = async () => {
-    if (!editSubcategoryName.trim()) {
-      setError('Il nome della sottocategoria non può essere vuoto');
-      return;
-    }
-
     try {
       setLoading(true);
-      
-      // Chiamata API per aggiornare la sottocategoria
-      await axios.put(
-        `${API_URL}/categoria/${selectedCategory}/sottocategoria/${selectedSubcategory}`,
-        { nuovoNome: editSubcategoryName }
-      );
-      
-      // Aggiorna la lista delle sottocategorie
+      const subcategoryData = {
+        translations: editSubcategoryTranslations
+      };
+      await updateSubcategory(selectedCategory, selectedSubcategory, subcategoryData);
       await fetchSubcategories();
-      
       setShowEditModal(false);
-      setSuccess('Sottocategoria aggiornata con successo!');
-      
-      // Nascondi il messaggio di successo dopo 3 secondi
+      setSuccess('Sottocategoria aggiornata!');
       setTimeout(() => setSuccess(''), 3000);
-      
       setLoading(false);
     } catch (error) {
-      console.error('Errore nell\'aggiornamento della sottocategoria:', error);
-      setError('Errore nell\'aggiornamento della sottocategoria: ' + (error.response?.data?.message || error.message));
+      setError('Errore aggiornamento: ' + (error.response?.data?.message || error.message));
       setLoading(false);
     }
   };
-
-  // Apre il modal per eliminare una sottocategoria
-  const handleDeleteClick = (subcategory) => {
-    setSelectedSubcategory(subcategory);
+  
+  // Gestori Modal (DELETE)
+  const handleShowDeleteModal = (sub) => {
+    setSelectedSubcategory(sub.subcategoryName);
+    setError('');
     setShowDeleteModal(true);
   };
-
-  // Elimina una sottocategoria
+  
   const handleDeleteSubcategory = async () => {
     try {
       setLoading(true);
-      
-      // Chiamata API per eliminare la sottocategoria
-      await axios.delete(
-        `${API_URL}/categoria/${selectedCategory}/sottocategoria/${selectedSubcategory}`
-      );
-      
-      // Aggiorna la lista delle sottocategorie
+      await deleteSubcategory(selectedCategory, selectedSubcategory);
       await fetchSubcategories();
-      
       setShowDeleteModal(false);
-      setSuccess('Sottocategoria eliminata con successo!');
-      
-      // Nascondi il messaggio di successo dopo 3 secondi
+      setSuccess('Sottocategoria eliminata!');
       setTimeout(() => setSuccess(''), 3000);
-      
       setLoading(false);
     } catch (error) {
-      console.error('Errore nell\'eliminazione della sottocategoria:', error);
-      setError('Errore nell\'eliminazione della sottocategoria: ' + (error.response?.data?.message || error.message));
+      setError('Errore eliminazione: ' + (error.response?.data?.message || error.message));
       setLoading(false);
     }
   };
 
-  // Resetta i messaggi di errore
-  const resetError = () => {
-    setError('');
+  // Funzione helper per gestire i cambiamenti nelle traduzioni
+  const handleTranslationChange = (e, lang, type) => {
+    const { value } = e.target;
+    if (type === 'new') {
+      setNewSubcategoryTranslations(prev => ({ ...prev, [lang]: value }));
+    } else {
+      setEditSubcategoryTranslations(prev => ({ ...prev, [lang]: value }));
+    }
   };
 
   return (
     <Container className="my-4">
-      <h2 className="mb-4 text-center">Gestione Sottocategorie</h2>
-      
-      {/* Messaggi di feedback */}
-      {error && (
-        <Alert variant="danger" onClose={resetError} dismissible>
-          {error}
-        </Alert>
-      )}
-      
-      {success && (
-        <Alert variant="success" onClose={() => setSuccess('')} dismissible>
-          {success}
-        </Alert>
-      )}
+      <h2 className="mb-4 text-center">Gestione Categorie e Sottocategorie</h2>
+      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+      {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
       
       <Row>
-        {/* Selezione categoria */}
+        {/* Colonna Categorie */}
         <Col lg={4} className="mb-4">
           <Card className="h-100 shadow-sm">
             <Card.Header className="bg-primary text-white">
-              <h5 className="mb-0">Categorie di Prodotti</h5>
+              <h5 className="mb-0">Categorie</h5>
             </Card.Header>
             <Card.Body>
-              <ListGroup>
-                {categories.map((category) => (
-                  <ListGroup.Item 
-                    key={category}
-                    active={selectedCategory === category}
-                    onClick={() => handleCategorySelect(category)}
-                    action
-                    className="d-flex justify-content-between align-items-center"
-                  >
-                    {category}
-                    {selectedCategory === category && (
-                      <span className="badge bg-primary rounded-pill">
-                        <i className="bi bi-check"></i>
-                      </span>
-                    )}
-                  </ListGroup.Item>
-                ))}
-              </ListGroup>
+              {loading && categories.length === 0 ? (
+                <div className="text-center">Caricamento Categorie...</div>
+              ) : (
+                <ListGroup>
+                  {/* 6. FIX: 'cat' ora è l'oggetto traduzione {it: "..."} */}
+                  {categories.map((cat, index) => (
+                    <ListGroup.Item 
+                      key={cat.it || index} // Usa 'it' come key
+                      active={selectedCategory === cat.it} // Confronta con 'it'
+                      onClick={() => handleCategorySelect(cat.it)} // Passa 'it'
+                      action
+                      className="d-flex justify-content-between align-items-center"
+                    >
+                      {cat.it} {/* Mostra 'it' */}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              )}
             </Card.Body>
           </Card>
         </Col>
         
-        {/* Gestione sottocategorie */}
+        {/* Colonna Sottocategorie */}
         <Col lg={8}>
-          <Card className="shadow-sm">
+           <Card className="shadow-sm">
             <Card.Header className="bg-light d-flex justify-content-between align-items-center">
               <h5 className="mb-0">
-                Sottocategorie di {selectedCategory}
+                Sottocategorie di: {selectedCategory || '...'}
               </h5>
-              <Button 
-                variant="primary" 
-                size="sm" 
-                onClick={handleAddClick}
-                disabled={loading}
-              >
+              <Button variant="primary" size="sm" onClick={handleShowAddModal} disabled={!selectedCategory}>
                 <i className="bi bi-plus-circle me-1"></i>
                 Aggiungi Sottocategoria
               </Button>
             </Card.Header>
             <Card.Body>
               {loading ? (
-                <div className="text-center py-4">
-                  <div className="spinner-border text-primary" role="status">
-                    <span className="visually-hidden">Caricamento...</span>
-                  </div>
-                  <p className="mt-2">Caricamento sottocategorie...</p>
-                </div>
+                <div className="text-center py-4"><Spinner animation="border" size="sm" /> Caricamento Sottocategorie...</div>
+              ) : !selectedCategory ? (
+                 <div className="text-center py-4 text-muted">Seleziona una categoria per iniziare.</div>
               ) : subcategories.length === 0 ? (
-                <div className="text-center py-4">
-                  <p className="text-muted mb-3">Nessuna sottocategoria trovata per {selectedCategory}</p>
-                  <Button 
-                    variant="outline-primary" 
-                    onClick={handleAddClick}
-                  >
-                    <i className="bi bi-plus-circle me-1"></i>
-                    Aggiungi la prima sottocategoria
-                  </Button>
-                </div>
+                <div className="text-center py-4 text-muted">Nessuna sottocategoria trovata per {selectedCategory}.</div>
               ) : (
-                <div className="table-responsive">
-                  <table className="table table-striped table-hover">
-                    <thead>
-                      <tr>
-                        <th>Nome Sottocategoria</th>
-                        <th className="text-end">Azioni</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subcategories.map((subcategory) => (
-                        <tr key={subcategory}>
-                          <td>{subcategory}</td>
-                          <td className="text-end">
-                            <Button
-                              variant="outline-primary"
-                              size="sm"
-                              className="me-2"
-                              onClick={() => handleEditClick(subcategory)}
-                            >
-                              <i className="bi bi-pencil"></i> Modifica
-                            </Button>
-                            <Button
-                              variant="outline-danger"
-                              size="sm"
-                              onClick={() => handleDeleteClick(subcategory)}
-                            >
-                              <i className="bi bi-trash"></i> Elimina
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <ListGroup variant="flush">
+                  {/* 7. FIX: La lista delle sottocategorie USA la struttura corretta */}
+                  {subcategories.map((sub, index) => (
+                    <ListGroup.Item key={sub.subcategoryName || index} className="d-flex justify-content-between align-items-center">
+                      <span>
+                        {sub.translations?.it || sub.subcategoryName}
+                        <small className="text-muted d-block">{sub.subcategoryName}</small>
+                      </span>
+                      <div>
+                        <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditModal(sub)}>
+                          <i className="bi bi-pencil"></i> Modifica
+                        </Button>
+                        <Button variant="outline-danger" size="sm" onClick={() => handleShowDeleteModal(sub)}>
+                          <i className="bi bi-trash"></i> Elimina
+                        </Button>
+                      </div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
               )}
             </Card.Body>
           </Card>
         </Col>
       </Row>
-      
-      {/* Modal per aggiungere sottocategoria */}
+
+      {/* Modal Aggiungi Sottocategoria */}
       <Modal show={showAddModal} onHide={() => setShowAddModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Aggiungi Sottocategoria</Modal.Title>
+          <Modal.Title>Aggiungi Sottocategoria a {selectedCategory}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group>
-              <Form.Label>Nome Sottocategoria</Form.Label>
+            <Form.Group className="mb-3">
+              <Form.Label>ID Sottocategoria (Univoco)</Form.Label>
               <Form.Control 
                 type="text" 
                 value={newSubcategoryName}
                 onChange={(e) => setNewSubcategoryName(e.target.value)}
-                placeholder="Inserisci il nome della sottocategoria"
+                placeholder="es: Piscina (senza spazi)"
               />
-              <Form.Text className="text-muted">
-                Questa sottocategoria sarà aggiunta a {selectedCategory}
-              </Form.Text>
+              <Form.Text className="text-danger">Obbligatorio. Non modificabile dopo la creazione.</Form.Text>
+            </Form.Group>
+            <hr />
+            <Form.Label>Traduzioni (Nome visualizzato)</Form.Label>
+            <Form.Group className="mb-2">
+              <Form.Control type="text" placeholder="Italiano" value={newSubcategoryTranslations.it} onChange={(e) => handleTranslationChange(e, 'it', 'new')} />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Control type="text" placeholder="Inglese" value={newSubcategoryTranslations.en} onChange={(e) => handleTranslationChange(e, 'en', 'new')} />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddModal(false)}>
-            Annulla
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleAddSubcategory}
-            disabled={loading || !newSubcategoryName.trim()}
-          >
-            {loading ? 'Aggiunta in corso...' : 'Aggiungi'}
+          <Button variant="secondary" onClick={() => setShowAddModal(false)}>Annulla</Button>
+          <Button variant="primary" onClick={handleAddSubcategory} disabled={loading || !newSubcategoryName.trim()}>
+            {loading ? 'Aggiunta...' : 'Aggiungi'}
           </Button>
         </Modal.Footer>
       </Modal>
-      
-      {/* Modal per modificare sottocategoria */}
+
+      {/* Modal Modifica Sottocategoria */}
       <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Modifica Sottocategoria</Modal.Title>
+          <Modal.Title>Modifica Sottocategoria: {editSubcategoryName}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
-            <Form.Group>
-              <Form.Label>Nome Sottocategoria</Form.Label>
+            <Form.Group className="mb-3">
+              <Form.Label>ID Sottocategoria (Non modificabile)</Form.Label>
               <Form.Control 
                 type="text" 
                 value={editSubcategoryName}
-                onChange={(e) => setEditSubcategoryName(e.target.value)}
+                disabled
               />
+            </Form.Group>
+            <hr />
+            <Form.Label>Traduzioni (Nome visualizzato)</Form.Label>
+            <Form.Group className="mb-2">
+              <Form.Control type="text" placeholder="Italiano" value={editSubcategoryTranslations.it} onChange={(e) => handleTranslationChange(e, 'it', 'edit')} />
+            </Form.Group>
+            <Form.Group className="mb-2">
+              <Form.Control type="text" placeholder="Inglese" value={editSubcategoryTranslations.en} onChange={(e) => handleTranslationChange(e, 'en', 'edit')} />
             </Form.Group>
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditModal(false)}>
-            Annulla
-          </Button>
-          <Button 
-            variant="primary" 
-            onClick={handleEditSubcategory}
-            disabled={loading || !editSubcategoryName.trim()}
-          >
-            {loading ? 'Salvataggio in corso...' : 'Salva Modifiche'}
+          <Button variant="secondary" onClick={() => setShowEditModal(false)}>Annulla</Button>
+          <Button variant="primary" onClick={handleEditSubcategory} disabled={loading}>
+            {loading ? 'Salvataggio...' : 'Salva Modifiche'}
           </Button>
         </Modal.Footer>
       </Modal>
-      
-      {/* Modal per eliminare sottocategoria */}
+
+      {/* Modal Conferma Eliminazione */}
       <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Conferma Eliminazione</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {selectedSubcategory && (
-            <p>
-              Sei sicuro di voler eliminare la sottocategoria <strong>{selectedSubcategory}</strong>?
-              <br />
-              <small className="text-danger">
-                Questa azione è irreversibile e rimuoverà l'associazione da tutti i prodotti collegati.
-              </small>
-            </p>
-          )}
+          Sei sicuro di voler eliminare la sottocategoria 
+          <strong>{selectedSubcategory}</strong>? 
+          L'azione è irreversibile.
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
-            Annulla
-          </Button>
-          <Button 
-            variant="danger" 
-            onClick={handleDeleteSubcategory}
-            disabled={loading}
-          >
-            {loading ? 'Eliminazione in corso...' : 'Elimina'}
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>Annulla</Button>
+          <Button variant="danger" onClick={handleDeleteSubcategory} disabled={loading}>
+            {loading ? 'Eliminazione...' : 'Elimina'}
           </Button>
         </Modal.Footer>
       </Modal>
+
     </Container>
   );
 };
