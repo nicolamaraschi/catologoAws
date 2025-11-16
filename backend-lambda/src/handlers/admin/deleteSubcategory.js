@@ -1,8 +1,8 @@
 // Percorso: backend-lambda/src/handlers/admin/categories/deleteSubcategory.js
-const { adminDeleteSubcategory } = require('../../../layers/common/services/dynamodb');
-const { successResponse, errorResponse } = require('../../../layers/common/utils/response');
-const { logError } = require('../../../layers/common/utils/error');
-const { HTTP_STATUS } = require('../../../config/constants');
+const { adminDeleteSubcategory } = require('../../layers/common/services/dynamodb');
+const { successResponse, errorResponse } = require('../../layers/common/utils/response');
+const { logError } = require('../../layers/common/utils/error');
+const { HTTP_STATUS } = require('../../config/constants');
 
 exports.handler = async (event) => {
   try {

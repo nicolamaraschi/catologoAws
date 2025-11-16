@@ -13,6 +13,7 @@ const {
   DeleteCommand,
   QueryCommand,
   ScanCommand,
+  BatchWriteCommand
 } = require('@aws-sdk/lib-dynamodb');
 const { v4: uuidv4 } = require('uuid');
 const { withRetry } = require('../utils/retry');

@@ -1,10 +1,10 @@
 // Percorso: backend-lambda/src/handlers/admin/categories/updateSubcategory.js
 // NOTA: Questo handler è identico a 'addSubcategory' perché usiamo PutItem,
 // che serve sia per creare che per aggiornare.
-const { adminAddSubcategory } = require('../../../layers/common/services/dynamodb');
-const { successResponse, errorResponse } = require('../../../layers/common/utils/response');
-const { logError } = require('../../../layers/common/utils/error');
-const { HTTP_STATUS } = require('../../../config/constants');
+const { adminAddSubcategory } = require('../../layers/common/services/dynamodb');
+const { successResponse, errorResponse } = require('../../layers/common/utils/response');
+const { logError } = require('../../layers/common/utils/error');
+const { HTTP_STATUS } = require('../../config/constants');
 
 exports.handler = async (event) => {
   try {

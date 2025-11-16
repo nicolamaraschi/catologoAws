@@ -1,10 +1,12 @@
+// frontend-catalogo-utente/src/components/products/ProductCard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext'; // Importa useLanguage
+import { useLanguage } from '../../context/LanguageContext';
 import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
-  const { t } = useLanguage(); // Ottieni la funzione di traduzione
+  const { t, language } = useLanguage();
+  
   console.log("ProductCard rendering with product:", product);
   
   if (!product) {
@@ -17,6 +19,15 @@ const ProductCard = ({ product }) => {
       </div>
     );
   }
+
+  // 🔥 HELPER: Estrae il testo localizzato
+  const getLocalizedText = (textObj, fallback = '') => {
+    if (typeof textObj === 'string') return textObj;
+    if (typeof textObj === 'object' && textObj) {
+      return textObj[language] || textObj.it || textObj.en || Object.values(textObj)[0] || fallback;
+    }
+    return fallback;
+  };
   
   const { 
     _id, 
@@ -30,6 +41,12 @@ const ProductCard = ({ product }) => {
     codice,
     tipoImballaggio
   } = product;
+  
+  // 🔥 CORREZIONE: Estrai i nomi localizzati
+  const productName = getLocalizedText(nome, t('product_without_name'));
+  const productCategory = getLocalizedText(categoria, t('category_not_specified'));
+  const productSubcategory = getLocalizedText(sottocategoria, '');
+  const productType = getLocalizedText(tipo, t('type_not_specified'));
   
   // Gestisci il caso in cui il prezzo sia undefined o non sia un numero
   const formattedPrice = typeof prezzo === 'number' 
@@ -46,7 +63,7 @@ const ProductCard = ({ product }) => {
   return (
     <div className="product-card">
       <div className="product-image">
-        <img src={mainImage} alt={nome || t('product_without_name')} />
+        <img src={mainImage} alt={productName} />
         <div className="product-overlay">
           <Link to={`/prodotto/${_id}`} className="view-product">
             {t('view')}
@@ -54,13 +71,13 @@ const ProductCard = ({ product }) => {
         </div>
       </div>
       <div className="product-info">
-        <div className="product-category-tag">{categoria || t('category_not_specified')}</div>
-        {sottocategoria && (
-          <div className="product-subcategory-tag">{sottocategoria}</div>
+        <div className="product-category-tag">{productCategory}</div>
+        {productSubcategory && (
+          <div className="product-subcategory-tag">{productSubcategory}</div>
         )}
-        <h3 className="product-title">{nome || t('product_without_name')}</h3>
+        <h3 className="product-title">{productName}</h3>
         {codice && <div className="product-code">{t('code_short')} {codice}</div>}
-        <p className="product-type">{tipo || t('type_not_specified')}</p>
+        <p className="product-type">{productType}</p>
         {tipoImballaggio && <p className="product-packaging">{tipoImballaggio}</p>}
         <div className="product-price">
           <span className="price">{formattedPrice} €</span>

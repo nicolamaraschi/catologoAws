@@ -1,8 +1,7 @@
-// Percorso: backend-lambda/src/handlers/admin/categories/createCategory.js
-const { adminCreateCategory } = require('../../../layers/common/services/dynamodb');
-const { successResponse, errorResponse } = require('../../../layers/common/utils/response');
-const { logError } = require('../../../layers/common/utils/error');
-const { HTTP_STATUS } = require('../../../config/constants');
+const { adminCreateCategory } = require('../../layers/common/services/dynamodb');
+const { successResponse, errorResponse } = require('../../layers/common/utils/response');
+const { logError } = require('../../layers/common/utils/error');
+const { HTTP_STATUS } = require('../../config/constants');
 
 exports.handler = async (event) => {
   try {

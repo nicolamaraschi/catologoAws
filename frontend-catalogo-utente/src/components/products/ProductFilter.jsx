@@ -1,30 +1,28 @@
+// frontend-catalogo-utente/src/components/products/ProductFilter.jsx
 import React, { useState, useRef, useEffect } from 'react';
+import { useLanguage } from '../../context/LanguageContext';
 import './ProductFilter.css';
 
-// Versione semplificata senza filtro di prezzo
 const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) => {
   const [localSearch, setLocalSearch] = useState(filters.search || '');
+  const { t } = useLanguage();
   const isInitialMount = useRef(true);
   const debounceTimerRef = useRef(null);
   const previousFiltersRef = useRef(filters);
   
   // Sincronizza lo stato locale quando cambia il filtro esterno
-  // ma SOLO se è cambiato esternamente, non per le nostre azioni
   useEffect(() => {
-    // Salta il primo mount
     if (isInitialMount.current) {
       isInitialMount.current = false;
       previousFiltersRef.current = filters;
       return;
     }
 
-    // Verifica se filters.search è cambiato esternamente
     if (filters.search !== previousFiltersRef.current.search && 
         filters.search !== localSearch) {
       setLocalSearch(filters.search);
     }
     
-    // Aggiorna il riferimento
     previousFiltersRef.current = filters;
   }, [filters, localSearch]);
 
@@ -33,18 +31,16 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
     const newValue = e.target.value;
     setLocalSearch(newValue);
     
-    // Cancella il timer esistente, se presente
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
     
-    // Imposta un nuovo timer
     debounceTimerRef.current = setTimeout(() => {
       onFilterChange({ search: newValue });
     }, 300);
   };
   
-  // Clean up del timer quando il componente si smonta
+  // Clean up del timer
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
@@ -70,7 +66,7 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
         <div className="search-box">
           <input
             type="text"
-            placeholder="Cerca prodotti..."
+            placeholder={t('search_products') || 'Cerca prodotti...'}
             value={localSearch}
             onChange={handleSearchChange}
           />
@@ -78,7 +74,7 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
             className="clear-search"
             onClick={clearSearch}
             style={{ visibility: localSearch ? 'visible' : 'hidden' }}
-            aria-label="Cancella ricerca"
+            aria-label={t('clear_search') || 'Cancella ricerca'}
             type="button"
           >
             ×
@@ -86,23 +82,23 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
         </div>
         
         <div className="sort-box">
-          <label htmlFor="sort">Ordina per:</label>
+          <label htmlFor="sort">{t('sort_by') || 'Ordina per'}:</label>
           <select
             id="sort"
             value={filters.sort || 'name-asc'}
             onChange={handleSortChange}
           >
-            <option value="name-asc">Nome (A-Z)</option>
-            <option value="name-desc">Nome (Z-A)</option>
-            <option value="price-asc">Prezzo (Crescente)</option>
-            <option value="price-desc">Prezzo (Decrescente)</option>
+            <option value="name-asc">{t('name_asc') || 'Nome (A-Z)'}</option>
+            <option value="name-desc">{t('name_desc') || 'Nome (Z-A)'}</option>
+            <option value="price-asc">{t('price_asc') || 'Prezzo (Crescente)'}</option>
+            <option value="price-desc">{t('price_desc') || 'Prezzo (Decrescente)'}</option>
           </select>
         </div>
       </div>
       
       <div className="filter-summary">
         <span className="products-count">
-          {totalProducts} {totalProducts === 1 ? 'prodotto' : 'prodotti'}
+          {totalProducts} {totalProducts === 1 ? t('product') || 'prodotto' : t('products') || 'prodotti'}
         </span>
       </div>
     </div>

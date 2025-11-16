@@ -697,7 +697,8 @@ Resources:
     Properties:
       FunctionName: !Sub '${AWS::StackName}-CatchAll'
       CodeUri: backend-lambda/
-      Handler: src/handlers/catchAll.handler
+      Handler: src/handlers/Catch-All.handler
+      Timeout: 11
       Description: Catch-all for undefined routes (returns 404)
       Events:
         CatchAll:
