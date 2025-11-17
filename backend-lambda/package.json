@@ -25,6 +25,7 @@
     "@aws-sdk/lib-dynamodb": "^3.932.0",
     "@aws-sdk/s3-request-presigner": "^3.682.0",
     "joi": "^17.13.3",
+    "lambda-multipart-parser": "^1.0.1",
     "uuid": "^10.0.0"
   },
   "devDependencies": {

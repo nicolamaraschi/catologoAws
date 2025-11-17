@@ -7,15 +7,11 @@ import {
   deleteSubcategory,
   getAllCategories
 } from '../api'; 
-// Rimuoviamo l'import di 'api' e 'axios' che servivano per il debug
-// import api from '../api'; 
-// import axios from 'axios'; 
-// import { fetchAuthSession } from 'aws-amplify/auth';
 
 const SubcategoryManagement = () => {
   // Stati per i dati
   const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState(null); // 1. Partiamo da null
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [subcategories, setSubcategories] = useState([]);
   
   // Stati per i Modal
@@ -38,24 +34,32 @@ const SubcategoryManagement = () => {
     const fetchCategories = async () => {
       setLoading(true);
       try {
-        const cats = await getAllCategories(); // 2. 'cats' è l'array di traduzioni [{it: "..."}, ...]
+        console.log('🔍 Fetching categories...');
+        const cats = await getAllCategories(); // Ora restituisce direttamente l'array
+        console.log('📋 Categories received:', cats);
+        
         setCategories(cats || []);
         if (cats && cats.length > 0) {
-          // 3. FIX: Usiamo 'it' come ID (es. "Domestico")
+          // Usa la traduzione italiana come chiave
           setSelectedCategory(cats[0].it); 
+          console.log('✅ Selected first category:', cats[0].it);
         }
         setLoading(false);
       } catch (err) {
+        console.error('❌ Error fetching categories:', err);
         setError('Impossibile caricare le categorie.');
         setLoading(false);
       }
     };
     fetchCategories();
-  }, []); // Array vuoto, esegue solo al mount
+  }, []);
 
   // Carica le sottocategorie quando cambia la categoria selezionata
   const fetchSubcategories = useCallback(async () => {
-    if (!selectedCategory) { // 'selectedCategory' ora è una stringa, es. "Domestico"
+    console.log('🔍 fetchSubcategories called with selectedCategory:', selectedCategory);
+    
+    if (!selectedCategory) {
+      console.log('⚠️ No selected category, clearing subcategories');
       setSubcategories([]);
       return;
     }
@@ -63,26 +67,31 @@ const SubcategoryManagement = () => {
     setLoading(true);
     try {
       setError('');
-      // 4. FIX: Passiamo la stringa (es. "Domestico") come ID, 
-      //    come fa il tuo script test-api.sh
+      
+      console.log('🌐 Making API call to getSubcategoriesByCategory with:', selectedCategory);
       const responseData = await getSubcategoriesByCategory(selectedCategory);
+      
+      console.log('📦 Raw subcategories response:', responseData);
+      console.log('📦 Subcategories type:', typeof responseData);
+      console.log('📦 Subcategories length:', responseData?.length);
+      
       setSubcategories(responseData || []);
       setLoading(false);
     } catch (error) {
-      console.error('Errore nel caricamento delle sottocategorie:', error);
-      setError('Impossibile caricare le sottocategorie.');
+      console.error('❌ Error in fetchSubcategories:', error);
+      setError('Impossibile caricare le sottocategorie: ' + error.message);
       setSubcategories([]); 
       setLoading(false);
     }
-  }, [selectedCategory]); // Dipende da selectedCategory
+  }, [selectedCategory]);
 
   useEffect(() => {
     fetchSubcategories();
   }, [fetchSubcategories]);
 
   // Gestori selezione
-  const handleCategorySelect = (categoryName) => {
-    setSelectedCategory(categoryName);
+  const handleCategorySelect = (categoryTranslation) => {
+    setSelectedCategory(categoryTranslation);
   };
   
   // Gestori Modal (ADD)
@@ -104,7 +113,6 @@ const SubcategoryManagement = () => {
         subcategoryName: newSubcategoryName,
         translations: newSubcategoryTranslations
       };
-      // 5. FIX: 'selectedCategory' è l'ID (es. "Domestico")
       await addSubcategory(selectedCategory, subcategoryData);
       await fetchSubcategories();
       setShowAddModal(false);
@@ -119,9 +127,10 @@ const SubcategoryManagement = () => {
 
   // Gestori Modal (EDIT)
   const handleShowEditModal = (sub) => {
-    setSelectedSubcategory(sub.subcategoryName);
-    setEditSubcategoryName(sub.subcategoryName);
-    setEditSubcategoryTranslations(sub.translations || { it: '', en: '', fr: '', es: '', de: '' });
+    // Ora 'sub' è direttamente l'oggetto traduzione
+    setSelectedSubcategory(sub.it); // Usa la traduzione italiana come ID
+    setEditSubcategoryName(sub.it);
+    setEditSubcategoryTranslations(sub);
     setError('');
     setShowEditModal(true);
   };
@@ -146,7 +155,7 @@ const SubcategoryManagement = () => {
   
   // Gestori Modal (DELETE)
   const handleShowDeleteModal = (sub) => {
-    setSelectedSubcategory(sub.subcategoryName);
+    setSelectedSubcategory(sub.it); // Usa la traduzione italiana come ID
     setError('');
     setShowDeleteModal(true);
   };
@@ -194,16 +203,15 @@ const SubcategoryManagement = () => {
                 <div className="text-center">Caricamento Categorie...</div>
               ) : (
                 <ListGroup>
-                  {/* 6. FIX: 'cat' ora è l'oggetto traduzione {it: "..."} */}
                   {categories.map((cat, index) => (
                     <ListGroup.Item 
-                      key={cat.it || index} // Usa 'it' come key
-                      active={selectedCategory === cat.it} // Confronta con 'it'
-                      onClick={() => handleCategorySelect(cat.it)} // Passa 'it'
+                      key={cat.it || index}
+                      active={selectedCategory === cat.it}
+                      onClick={() => handleCategorySelect(cat.it)}
                       action
                       className="d-flex justify-content-between align-items-center"
                     >
-                      {cat.it} {/* Mostra 'it' */}
+                      {cat.it}
                     </ListGroup.Item>
                   ))}
                 </ListGroup>
@@ -233,12 +241,11 @@ const SubcategoryManagement = () => {
                 <div className="text-center py-4 text-muted">Nessuna sottocategoria trovata per {selectedCategory}.</div>
               ) : (
                 <ListGroup variant="flush">
-                  {/* 7. FIX: La lista delle sottocategorie USA la struttura corretta */}
                   {subcategories.map((sub, index) => (
-                    <ListGroup.Item key={sub.subcategoryName || index} className="d-flex justify-content-between align-items-center">
+                    <ListGroup.Item key={sub.it || index} className="d-flex justify-content-between align-items-center">
                       <span>
-                        {sub.translations?.it || sub.subcategoryName}
-                        <small className="text-muted d-block">{sub.subcategoryName}</small>
+                        {sub.it}
+                        <small className="text-muted d-block">EN: {sub.en}</small>
                       </span>
                       <div>
                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditModal(sub)}>
@@ -310,10 +317,10 @@ const SubcategoryManagement = () => {
             <hr />
             <Form.Label>Traduzioni (Nome visualizzato)</Form.Label>
             <Form.Group className="mb-2">
-              <Form.Control type="text" placeholder="Italiano" value={editSubcategoryTranslations.it} onChange={(e) => handleTranslationChange(e, 'it', 'edit')} />
+              <Form.Control type="text" placeholder="Italiano" value={editSubcategoryTranslations.it || ''} onChange={(e) => handleTranslationChange(e, 'it', 'edit')} />
             </Form.Group>
             <Form.Group className="mb-2">
-              <Form.Control type="text" placeholder="Inglese" value={editSubcategoryTranslations.en} onChange={(e) => handleTranslationChange(e, 'en', 'edit')} />
+              <Form.Control type="text" placeholder="Inglese" value={editSubcategoryTranslations.en || ''} onChange={(e) => handleTranslationChange(e, 'en', 'edit')} />
             </Form.Group>
           </Form>
         </Modal.Body>
@@ -332,7 +339,7 @@ const SubcategoryManagement = () => {
         </Modal.Header>
         <Modal.Body>
           Sei sicuro di voler eliminare la sottocategoria 
-          <strong>{selectedSubcategory}</strong>? 
+          <strong> {selectedSubcategory}</strong>? 
           L'azione è irreversibile.
         </Modal.Body>
         <Modal.Footer>

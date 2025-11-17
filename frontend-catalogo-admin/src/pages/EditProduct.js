@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Card, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Container, Card, Form, Button, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
+import { FaTrash, FaPlus, FaImage } from 'react-icons/fa';
 import { 
   getProdottoById, 
   updateProdotto, 
@@ -18,20 +19,30 @@ const EditProduct = () => {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   
-  // Stati per il Form 
+  // Stati per il Form (oggetti per traduzioni)
   const [nome, setNome] = useState({ it: '', en: '', fr: '', es: '', de: '' });
   const [codice, setCodice] = useState('');
   const [tipo, setTipo] = useState('');
   const [prezzo, setPrezzo] = useState(0);
-  const [unita, setUnita] = useState('');
-  const [categoria, setCategoria] = useState({ it: '', en: '' }); 
-  const [sottocategoria, setSottocategoria] = useState({ it: '', en: '' }); 
-  const [descrizione, setDescrizione] = useState({ it: '', en: '' });
+  const [unita, setUnita] = useState('€/PZ'); // ⚠️ DEFAULT VALUE
+  const [categoria, setCategoria] = useState({ it: '', en: '', fr: '', es: '', de: '' }); 
+  const [sottocategoria, setSottocategoria] = useState({ it: '', en: '', fr: '', es: '', de: '' }); 
+  const [descrizione, setDescrizione] = useState({ it: '', en: '', fr: '', es: '', de: '' });
+
+  // Stati per le immagini
+  const [existingImages, setExistingImages] = useState([]);
+  const [imagesToRemove, setImagesToRemove] = useState([]);
+  const [newImages, setNewImages] = useState([]);
+  const [previewImages, setPreviewImages] = useState([]);
 
   // Stati UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // 🔒 VALORI CONSENTITI (hardcoded per sicurezza)
+  const UNITA_OPTIONS = ['€/PZ', '€/KG'];
+  const TIPO_OPTIONS = ['BULK', 'SECCHIO', 'CARTONE', 'FLACONE'];
 
   // 1. Carica il prodotto e le categorie all'avvio
   useEffect(() => {
@@ -40,56 +51,68 @@ const EditProduct = () => {
         setLoading(true);
         setError('');
         
+        console.log('🔍 Loading product and categories...');
         const [productData, categoriesData] = await Promise.all([
           getProdottoById(productId),
           getAllCategories()
         ]);
         
+        console.log('📦 Product data received:', productData);
+        console.log('📋 Categories data received:', categoriesData);
+        
         setProduct(productData);
         setCategories(categoriesData || []);
+        
+        if (productData.immagini) {
+          setExistingImages(productData.immagini);
+        }
+        
         setLoading(false);
       } catch (err) {
-        setError("Impossibile caricare il prodotto. " + err.message);
+        console.error('❌ Error loading data:', err);
+        setError("Impossibile caricare il prodotto. " + (err.message || 'Errore sconosciuto'));
         setLoading(false);
       }
     };
     loadData();
   }, [productId]);
 
-  // 2. Popola il form SOLO quando 'product' è stato caricato
+  // 2. Popola il form quando il prodotto è caricato
   useEffect(() => {
     if (product) {
-      setNome(product.nome || { it: '' });
+      console.log('📝 Populating form with product data:', product);
+      
+      setNome(product.nome || { it: '', en: '', fr: '', es: '', de: '' });
       setCodice(product.codice || '');
-      setTipo(product.tipo || '');
+      setTipo(product.tipo || 'BULK');
       setPrezzo(product.prezzo || 0);
-      setUnita(product.unita || '');
-      setCategoria(product.categoria || { it: '' });
-      setSottocategoria(product.sottocategoria || { it: '' });
-      setDescrizione(product.descrizione || { it: '' });
+      
+      // 🔧 Normalizza unita - se non è valida, usa default
+      const normalizedUnita = product.unita?.trim();
+      setUnita(UNITA_OPTIONS.includes(normalizedUnita) ? normalizedUnita : '€/PZ');
+      
+      setCategoria(product.categoria || { it: '', en: '', fr: '', es: '', de: '' });
+      setSottocategoria(product.sottocategoria || { it: '', en: '', fr: '', es: '', de: '' });
+      setDescrizione(product.descrizione || { it: '', en: '', fr: '', es: '', de: '' });
     }
   }, [product]);
 
   // 3. Carica le sottocategorie quando la categoria cambia
-  const loadSubcategories = useCallback(async (categoryName) => {
-    // 
-    // 1. FIX PRINCIPALE: Se il nome è vuoto, svuota le sottocategorie e fermati.
-    // 
-    if (!categoryName) {
+  const loadSubcategories = useCallback(async (categoryIt) => {
+    if (!categoryIt) {
       setSubcategories([]);
       return;
     }
-
     try {
-      const selectedCat = categories.find(c => c.translations?.it === categoryName);
-      if (selectedCat) {
-        const subData = await getSubcategoriesByCategory(selectedCat.categoryName);
-        setSubcategories(subData || []);
-      }
+      console.log('🔍 Loading subcategories for:', categoryIt);
+      const subData = await getSubcategoriesByCategory(categoryIt);
+      console.log('📦 Subcategories received:', subData);
+      setSubcategories(subData || []);
     } catch (err) {
-      console.error("Errore caricamento sottocategorie:", err);
+      console.error("❌ Error loading subcategories:", err);
+      setSubcategories([]);
     }
-  }, [categories]);
+  }, []);
 
   useEffect(() => {
     if (categoria?.it) {
@@ -97,57 +120,148 @@ const EditProduct = () => {
     }
   }, [categoria, loadSubcategories]);
 
+  // Gestori per le immagini
+  const handleRemoveExistingImage = (imageUrl) => {
+    setExistingImages(prev => prev.filter(img => img !== imageUrl));
+    setImagesToRemove(prev => [...prev, imageUrl]);
+  };
 
-  // Gestore per l'aggiornamento
+  const handleNewImagesChange = (e) => {
+    const files = Array.from(e.target.files);
+    setNewImages(files);
+    
+    previewImages.forEach(URL.revokeObjectURL);
+    const previews = files.map(file => URL.createObjectURL(file));
+    setPreviewImages(previews);
+  };
+
+  const handleRemoveNewImage = (index) => {
+    const newImagesList = [...newImages];
+    const newPreviewsList = [...previewImages];
+    
+    URL.revokeObjectURL(newPreviewsList[index]);
+    
+    newImagesList.splice(index, 1);
+    newPreviewsList.splice(index, 1);
+    
+    setNewImages(newImagesList);
+    setPreviewImages(newPreviewsList);
+  };
+
+  useEffect(() => {
+    return () => {
+      previewImages.forEach(URL.revokeObjectURL);
+    };
+  }, [previewImages]);
+
+  // 4. Gestore per l'aggiornamento
   const handleUpdate = async (e) => {
     e.preventDefault();
     setLoading(true);
     setSuccess('');
     setError('');
 
-    const updatedProduct = {
-      nome,
-      codice,
-      tipo,
-      prezzo: parseFloat(prezzo),
-      unita,
-      categoria,
-      sottocategoria,
-      descrizione,
-    };
-
     try {
-      await updateProdotto(productId, updatedProduct);
+      // 🔒 VALIDAZIONE CLIENT-SIDE RIGOROSA
+      if (!codice.trim()) {
+        throw new Error('Il codice prodotto è obbligatorio');
+      }
+      if (!tipo || !TIPO_OPTIONS.includes(tipo)) {
+        throw new Error('Tipo prodotto non valido');
+      }
+      if (!unita || !UNITA_OPTIONS.includes(unita)) {
+        throw new Error('Unità non valida');
+      }
+      if (!nome.it?.trim()) {
+        throw new Error('Il nome in italiano è obbligatorio');
+      }
+      if (!categoria.it) {
+        throw new Error('La categoria è obbligatoria');
+      }
+
+      // Prepara l'oggetto dati per l'API
+      const updatedProductData = {
+        nome,
+        codice: codice.trim(),
+        tipo, // Valore esatto dal select
+        prezzo: parseFloat(prezzo),
+        unita, // Valore esatto dal select (€/PZ o €/KG)
+        categoria,
+        sottocategoria,
+        descrizione,
+        keepExistingImages: existingImages,
+        removeImages: imagesToRemove
+      };
+
+      console.log('🚀 Updating product with data:', updatedProductData);
+      console.log('📷 New images to add:', newImages.length);
+      
+      await updateProdotto(productId, updatedProductData, newImages);
+      
       setSuccess('Prodotto aggiornato con successo!');
+      
+      console.log('🔄 Reloading updated product...');
+      const refreshedProductData = await getProdottoById(productId);
+      
+      setProduct(refreshedProductData);
+      if (refreshedProductData.immagini) {
+        setExistingImages(refreshedProductData.immagini);
+      }
+      
+      setImagesToRemove([]);
+      setNewImages([]);
+      setPreviewImages([]);
+      
       setLoading(false);
     } catch (err) {
-      setError('Errore durante l\'aggiornamento: ' + err.message);
+      console.error('❌ Update error:', err);
+      const errorMessage = err.message || (err.details ? err.details[0].message : 'Errore sconosciuto');
+      setError(`Errore durante l'aggiornamento: ${errorMessage}`);
       setLoading(false);
     }
   };
 
-  // Gestore per la cancellazione
+  // Gestore per l'eliminazione
   const handleDelete = async () => {
-    if (window.confirm(`Sei sicuro di voler eliminare questo prodotto? L'azione è irreversibile.`)) {
+    if (window.confirm(`Sei sicuro di voler eliminare "${product.nome?.it}"? L'azione è irreversibile.`)) {
       try {
         await deleteProdotto(productId);
-        navigate('/view-products'); // Torna alla lista
+        navigate('/view-products');
       } catch (err) {
-        setError("Errore durante l'eliminazione: " + err.message);
+        setError("Errore durante l'eliminazione: " + (err.message || 'Errore sconosciuto'));
       }
     }
   };
 
-  // Gestore per i campi di traduzione (come 'nome')
-  const handleTranslationChange = (e, field) => {
-    const { name, value } = e.target;
-    field(prev => ({
+  // Funzioni helper per il form
+  const handleTranslationChange = (setter, lang, value) => {
+    setter(prev => ({
       ...prev,
-      [name]: value
+      [lang]: value
     }));
   };
 
-  if (loading || !product) {
+  const handleCategoryChange = (e) => {
+    const selectedCategoryIt = e.target.value;
+    const selectedCategory = categories.find(cat => cat.it === selectedCategoryIt);
+    
+    if (selectedCategory) {
+      setCategoria(selectedCategory);
+      setSottocategoria({ it: '', en: '', fr: '', es: '', de: '' });
+    }
+  };
+
+  const handleSubcategoryChange = (e) => {
+    const selectedSubcategoryIt = e.target.value;
+    const selectedSubcategory = subcategories.find(sub => sub.it === selectedSubcategoryIt);
+    
+    if (selectedSubcategory) {
+      setSottocategoria(selectedSubcategory);
+    }
+  };
+
+  // Render
+  if (loading && !product) {
     return (
       <Container className="my-4 text-center">
         <Spinner animation="border" role="status" />
@@ -162,7 +276,7 @@ const EditProduct = () => {
         <Card.Header className="bg-light d-flex justify-content-between align-items-center">
           <h2 className="mb-0">Modifica Prodotto: {product.nome?.it}</h2>
           <Button variant="outline-danger" onClick={handleDelete}>
-            Elimina Prodotto
+            <FaTrash /> Elimina
           </Button>
         </Card.Header>
         <Card.Body>
@@ -170,64 +284,202 @@ const EditProduct = () => {
           {success && <Alert variant="success">{success}</Alert>}
 
           <Form onSubmit={handleUpdate}>
+            
+            {/* Sezione Gestione Immagini */}
+            <Card className="mb-4">
+              <Card.Header>
+                <h5><FaImage className="me-2" />Gestione Immagini</h5>
+              </Card.Header>
+              <Card.Body>
+                <div className="mb-4">
+                  <h6>Immagini Attuali</h6>
+                  {existingImages.length === 0 ? (
+                    <Badge bg="secondary">Nessuna immagine presente</Badge>
+                  ) : (
+                    <Row>
+                      {existingImages.map((imageUrl, index) => (
+                        <Col xs={6} md={3} key={index} className="mb-3">
+                          <Card>
+                            <Card.Img 
+                              variant="top" 
+                              src={imageUrl}
+                              style={{ height: '150px', objectFit: 'cover' }}
+                              onError={(e) => { e.target.src = 'https://via.placeholder.com/150'; }}
+                            />
+                            <Card.Body className="p-2 text-center">
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm"
+                                onClick={() => handleRemoveExistingImage(imageUrl)}
+                              >
+                                <FaTrash /> Rimuovi
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  )}
+                </div>
+
+                <div className="mb-3">
+                  <h6>Aggiungi Nuove Immagini</h6>
+                  <Form.Group>
+                    <Form.Label>
+                      <FaPlus className="me-2" />Seleziona Nuove Immagini
+                    </Form.Label>
+                    <Form.Control
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleNewImagesChange}
+                    />
+                  </Form.Group>
+                </div>
+
+                {previewImages.length > 0 && (
+                  <div>
+                    <h6>Anteprime Nuove Immagini</h6>
+                    <Row>
+                      {previewImages.map((preview, index) => (
+                        <Col xs={6} md={3} key={index} className="mb-3">
+                          <Card>
+                            <Card.Img 
+                              variant="top" 
+                              src={preview}
+                              style={{ height: '150px', objectFit: 'cover' }}
+                            />
+                            <Card.Body className="p-2 text-center">
+                              <Button 
+                                variant="outline-danger" 
+                                size="sm"
+                                onClick={() => handleRemoveNewImage(index)}
+                              >
+                                <FaTrash /> Rimuovi
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      ))}
+                    </Row>
+                  </div>
+                )}
+              </Card.Body>
+            </Card>
+
             {/* Sezione Nomi Tradotti */}
-            <Row className="mb-3">
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Nome (IT)</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="it"
-                    value={nome.it}
-                    onChange={(e) => handleTranslationChange(e, setNome)} 
-                  />
-                </Form.Group>
-              </Col>
-              <Col md={6}>
-                <Form.Group>
-                  <Form.Label>Nome (EN)</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    name="en"
-                    value={nome.en}
-                    onChange={(e) => handleTranslationChange(e, setNome)} 
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
+            <Card className="mb-4">
+              <Card.Header><h5>Nome Prodotto (Traduzioni)</h5></Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Italiano <span className="text-danger">*</span></Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        value={nome.it || ''}
+                        onChange={(e) => handleTranslationChange(setNome, 'it', e.target.value)}
+                        required
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Inglese</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        value={nome.en || ''}
+                        onChange={(e) => handleTranslationChange(setNome, 'en', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Francese</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        value={nome.fr || ''}
+                        onChange={(e) => handleTranslationChange(setNome, 'fr', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Spagnolo</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        value={nome.es || ''}
+                        onChange={(e) => handleTranslationChange(setNome, 'es', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Tedesco</Form.Label>
+                      <Form.Control 
+                        type="text" 
+                        value={nome.de || ''}
+                        onChange={(e) => handleTranslationChange(setNome, 'de', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
 
             {/* Sezione Dettagli */}
             <Row className="mb-3">
               <Col md={4}>
                 <Form.Group>
-                  <Form.Label>Codice Prodotto</Form.Label>
+                  <Form.Label>Codice Prodotto <span className="text-danger">*</span></Form.Label>
                   <Form.Control 
                     type="text" 
                     value={codice}
-                    onChange={(e) => setCodice(e.target.value)} 
+                    onChange={(e) => setCodice(e.target.value)}
+                    required
                   />
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              <Col md={2}>
                 <Form.Group>
-                  <Form.Label>Prezzo</Form.Label>
+                  <Form.Label>Tipo <span className="text-danger">*</span></Form.Label>
+                  <Form.Select 
+                    value={tipo}
+                    onChange={(e) => setTipo(e.target.value)}
+                    required
+                  >
+                    {TIPO_OPTIONS.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col md={3}>
+                <Form.Group>
+                  <Form.Label>Prezzo <span className="text-danger">*</span></Form.Label>
                   <Form.Control 
                     type="number" 
                     step="0.01"
                     value={prezzo}
-                    onChange={(e) => setPrezzo(e.target.value)} 
+                    onChange={(e) => setPrezzo(e.target.value)}
+                    required
                   />
                 </Form.Group>
               </Col>
-              <Col md={4}>
+              <Col md={3}>
                 <Form.Group>
-                  <Form.Label>Unità</Form.Label>
-                  <Form.Control 
-                    type="text" 
-                    placeholder="es: €/PZ"
+                  <Form.Label>Unità <span className="text-danger">*</span></Form.Label>
+                  <Form.Select 
                     value={unita}
-                    onChange={(e) => setUnita(e.target.value)} 
-                  />
+                    onChange={(e) => setUnita(e.target.value)}
+                    required
+                  >
+                    {UNITA_OPTIONS.map(option => (
+                      <option key={option} value={option}>{option}</option>
+                    ))}
+                  </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
@@ -236,24 +488,16 @@ const EditProduct = () => {
             <Row className="mb-3">
               <Col md={6}>
                 <Form.Group>
-                  <Form.Label>Categoria</Form.Label>
+                  <Form.Label>Categoria <span className="text-danger">*</span></Form.Label>
                   <Form.Select
                     value={categoria.it || ''} 
-                    onChange={(e) => {
-                      const selectedCatIt = e.target.value;
-                      const selectedCat = categories.find(c => c.translations?.it === selectedCatIt) || {};
-                      setCategoria(selectedCat.translations || { it: selectedCatIt }); 
-                      
-                      // 2. FIX SECONDARIO: Resetta la sottocategoria quando cambi la categoria
-                      setSottocategoria({ it: '' }); 
-                      
-                      loadSubcategories(selectedCatIt); 
-                    }}
+                    onChange={handleCategoryChange}
+                    required
                   >
                     <option value="">Seleziona una categoria</option>
                     {categories.map((cat, index) => (
-                      <option key={cat.categoryName || index} value={cat.translations?.it}>
-                        {cat.translations?.it || cat.categoryName}
+                      <option key={index} value={cat.it}>
+                        {cat.it}
                       </option>
                     ))}
                   </Form.Select>
@@ -264,28 +508,94 @@ const EditProduct = () => {
                   <Form.Label>Sottocategoria</Form.Label>
                   <Form.Select
                     value={sottocategoria.it || ''} 
-                    onChange={(e) => {
-                      const selectedSubIt = e.target.value;
-                      const selectedSub = subcategories.find(s => s.translations?.it === selectedSubIt) || {};
-                      setSottocategoria(selectedSub.translations || { it: selectedSubIt }); 
-                    }}
-                    disabled={subcategories.length === 0}
+                    onChange={handleSubcategoryChange}
+                    disabled={!categoria.it || subcategories.length === 0}
                   >
                     <option value="">Seleziona una sottocategoria</option>
                     {subcategories.map((sub, index) => (
-                      <option key={sub.subcategoryName || index} value={sub.translations?.it}>
-                        {sub.translations?.it || sub.subcategoryName}
+                      <option key={index} value={sub.it}>
+                        {sub.it}
                       </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
+
+            {/* Sezione Descrizioni */}
+            <Card className="mb-4">
+              <Card.Header><h5>Descrizione (Traduzioni)</h5></Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Italiano</Form.Label>
+                      <Form.Control 
+                        as="textarea"
+                        rows={3}
+                        value={descrizione.it || ''}
+                        onChange={(e) => handleTranslationChange(setDescrizione, 'it', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={6}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Inglese</Form.Label>
+                      <Form.Control 
+                        as="textarea"
+                        rows={3}
+                        value={descrizione.en || ''}
+                        onChange={(e) => handleTranslationChange(setDescrizione, 'en', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Francese</Form.Label>
+                      <Form.Control 
+                        as="textarea"
+                        rows={3}
+                        value={descrizione.fr || ''}
+                        onChange={(e) => handleTranslationChange(setDescrizione, 'fr', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Spagnolo</Form.Label>
+                      <Form.Control 
+                        as="textarea"
+                        rows={3}
+                        value={descrizione.es || ''}
+                        onChange={(e) => handleTranslationChange(setDescrizione, 'es', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Tedesco</Form.Label>
+                      <Form.Control 
+                        as="textarea"
+                        rows={3}
+                        value={descrizione.de || ''}
+                        onChange={(e) => handleTranslationChange(setDescrizione, 'de', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
             
             <hr />
             <div className="text-end">
+              <Button variant="secondary" onClick={() => navigate('/view-products')} className="me-2">
+                Annulla
+              </Button>
               <Button variant="primary" type="submit" disabled={loading}>
-                {loading ? <Spinner as="span" size="sm" /> : 'Salva Modifiche'}
+                {loading ? <Spinner as="span" size="sm" className="me-2" /> : ''}
+                {loading ? 'Salvataggio...' : 'Salva Modifiche'}
               </Button>
             </div>
           </Form>

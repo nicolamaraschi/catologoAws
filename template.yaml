@@ -414,6 +414,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ProductsTable
+        - S3CrudPolicy:         
+            BucketName: !Ref ImagesBucket
       Events:
         CreateProduct:
           Type: Api
@@ -434,6 +436,8 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ProductsTable
+        - S3CrudPolicy:         
+            BucketName: !Ref ImagesBucket
       Events:
         UpdateProduct:
           Type: Api

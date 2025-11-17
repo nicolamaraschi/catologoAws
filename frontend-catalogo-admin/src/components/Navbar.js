@@ -2,8 +2,20 @@ import React from 'react';
 import { LinkContainer } from 'react-router-bootstrap';
 import { Navbar, Nav, NavDropdown, Button } from 'react-bootstrap';
 
-// 1. Accetta 'user' e 'signOut' come props
 const AppNavbar = ({ user, signOut }) => {
+  // Funzione helper per ottenere l'email dell'utente
+  const getUserEmail = () => {
+    if (user?.attributes?.email) {
+      return user.attributes.email;
+    }
+    if (user?.username) {
+      return user.username;
+    }
+    return null;
+  };
+
+  const userEmail = getUserEmail();
+
   return (
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
       <div className="container-fluid">
@@ -32,24 +44,30 @@ const AppNavbar = ({ user, signOut }) => {
           </Nav>
           
           <Nav>
-            {/* 2. FIX: Il controllo è stato esteso!
-              Invece di controllare solo 'user', controlliamo 'user && user.attributes'.
-              Questo previene l'errore se 'user' esiste ma 'attributes' non è ancora caricato.
-            */}
-            {user && user.attributes ? (
-              <NavDropdown title={user.attributes.email} id="user-dropdown" align="end">
+            {/* FIX: Controllo più robusto per l'utente */}
+            {userEmail ? (
+              <NavDropdown title={userEmail} id="user-dropdown" align="end">
                 <NavDropdown.Item disabled>
-                  {/* Aggiunto optional chaining (?) per sicurezza */}
-                  Ruolo: {user.signInUserSession?.accessToken?.payload["cognito:groups"]?.join(', ') || 'Admin'}
+                  Ruolo: {user?.signInUserSession?.accessToken?.payload["cognito:groups"]?.join(', ') || 'Admin'}
                 </NavDropdown.Item>
                 <NavDropdown.Divider />
-                <NavDropdown.Item as={Button} onClick={signOut} className="text-danger">
+                <NavDropdown.Item 
+                  onClick={() => {
+                    console.log('🚪 Logout clicked');
+                    signOut();
+                  }}
+                  className="text-danger"
+                  style={{ cursor: 'pointer' }}
+                >
                   Logout
                 </NavDropdown.Item>
               </NavDropdown>
-            ) : (
-              // 3. Fallback per lo stato di caricamento
+            ) : user ? (
+              // Se user esiste ma non ha email, mostra caricamento
               <Nav.Link disabled>Caricamento utente...</Nav.Link>
+            ) : (
+              // Se non c'è user, mostra che non è loggato
+              <Nav.Link disabled>Non autenticato</Nav.Link>
             )}
           </Nav>
         </Navbar.Collapse>

@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Form, Button, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Container, Card, Table, Form, Button, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { getAllProdotti, getAllCategories, deleteProdotto } from '../api';
-// import { getSubcategoriesByCategory } from '../api'; // Non usato nel filtro base
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  // const [subcategories, setSubcategories] = useState([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -15,7 +13,6 @@ const ViewProducts = () => {
   // Stati per i filtri
   const [filterText, setFilterText] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
-  // const [filterSubcategory, setFilterSubcategory] = useState('');
 
   useEffect(() => {
     const loadData = async () => {
@@ -23,18 +20,23 @@ const ViewProducts = () => {
         setLoading(true);
         setError('');
         
+        console.log('🔍 Loading products and categories...');
+        
         // Carica prodotti e categorie in parallelo
         const [productsData, categoriesData] = await Promise.all([
           getAllProdotti(),
           getAllCategories()
         ]);
         
+        console.log('📦 Products loaded:', productsData);
+        console.log('📋 Categories loaded:', categoriesData);
+        
         setProducts(productsData || []);
         setCategories(categoriesData || []);
         
         setLoading(false);
       } catch (err) {
-        console.error("Errore nel caricamento dei dati:", err);
+        console.error("❌ Error loading data:", err);
         setError("Impossibile caricare i dati. " + err.message);
         setLoading(false);
       }
@@ -55,17 +57,62 @@ const ViewProducts = () => {
     }
   };
 
-  // Logica di filtraggio
+  // Logica di filtraggio aggiornata per il nuovo formato
   const filteredProducts = products
     .filter(product => {
-      const nomeIt = product.nome?.it || '';
+      // Filtra per nome (controlla sia nome.it che productId come fallback)
+      const nomeIt = product.nome?.it || product.productId || '';
       return nomeIt.toLowerCase().includes(filterText.toLowerCase());
     })
     .filter(product => {
       if (filterCategory === '') return true;
+      // Filtra per categoria usando il nuovo formato
       const catIt = product.categoria?.it || '';
       return catIt === filterCategory;
     });
+
+  // Funzione per ottenere l'URL dell'immagine del prodotto
+  const getProductImageUrl = (product) => {
+    // Controlla se il prodotto ha immagini
+    if (product.immagini && product.immagini.length > 0) {
+      // Restituisce la prima immagine
+      return product.immagini[0];
+    }
+    // Immagine placeholder se non ci sono immagini
+    return '/placeholder-image.png';
+  };
+
+  // Componente per visualizzare le immagini del prodotto
+  const ProductImages = ({ product }) => {
+    if (!product.immagini || product.immagini.length === 0) {
+      return <Badge bg="secondary">Nessuna immagine</Badge>;
+    }
+
+    return (
+      <div className="d-flex flex-wrap gap-1">
+        {product.immagini.slice(0, 3).map((imageUrl, index) => (
+          <img
+            key={index}
+            src={imageUrl}
+            alt={`${product.nome?.it} - ${index + 1}`}
+            style={{ 
+              width: '40px', 
+              height: '40px', 
+              objectFit: 'cover',
+              borderRadius: '4px',
+              border: '1px solid #dee2e6'
+            }}
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        ))}
+        {product.immagini.length > 3 && (
+          <Badge bg="info">+{product.immagini.length - 3}</Badge>
+        )}
+      </div>
+    );
+  };
 
   return (
     <Container className="my-4">
@@ -76,7 +123,7 @@ const ViewProducts = () => {
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
           
-          {/* Filtri */}
+          {/* Filtri aggiornati */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
@@ -97,10 +144,10 @@ const ViewProducts = () => {
                   onChange={(e) => setFilterCategory(e.target.value)}
                 >
                   <option value="">Tutte le categorie</option>
-                  {/* 1. FIX: Aggiunto 'index' al map e usato nella key */}
+                  {/* FIX: Gestisce il nuovo formato con traduzioni */}
                   {categories.map((cat, index) => (
-                    <option key={cat.categoryName || index} value={cat.translations?.it}>
-                      {cat.translations?.it || cat.categoryName}
+                    <option key={index} value={cat.it}>
+                      {cat.it}
                     </option>
                   ))}
                 </Form.Select>
@@ -108,7 +155,7 @@ const ViewProducts = () => {
             </Col>
           </Row>
 
-          {/* Tabella Prodotti */}
+          {/* Tabella Prodotti aggiornata */}
           {loading ? (
             <div className="text-center py-5">
               <Spinner animation="border" role="status" />
@@ -118,6 +165,7 @@ const ViewProducts = () => {
             <Table striped bordered hover responsive>
               <thead>
                 <tr>
+                  <th>Immagini</th> {/* NUOVA COLONNA */}
                   <th>Nome Prodotto</th>
                   <th>Codice</th>
                   <th>Categoria</th>
@@ -129,11 +177,16 @@ const ViewProducts = () => {
               <tbody>
                 {filteredProducts.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center text-muted">Nessun prodotto trovato.</td>
+                    <td colSpan="7" className="text-center text-muted">Nessun prodotto trovato.</td>
                   </tr>
                 ) : (
                   filteredProducts.map(product => (
                     <tr key={product.productId}>
+                      {/* NUOVA CELLA PER LE IMMAGINI */}
+                      <td>
+                        <ProductImages product={product} />
+                      </td>
+                      
                       <td>{product.nome?.it || product.productId}</td>
                       <td>{product.codice}</td>
                       <td>{product.categoria?.it || 'N/D'}</td>
