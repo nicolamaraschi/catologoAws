@@ -5,36 +5,52 @@ import './ProductDetail.css';
 
 const ProductDetail = ({ product }) => {
   const [activeImage, setActiveImage] = useState(0);
-  const { t } = useLanguage(); // Use the translation hook
-  
+  const { t, language } = useLanguage(); // Use the translation hook
+
   if (!product) {
     return <div className="product-detail-loading">{t('loading')}</div>;
   }
-  
-  const { 
-    nome, 
-    tipo, 
-    prezzo, 
-    unita, 
+
+  // 🔥 HELPER: Estrae il testo localizzato
+  const getLocalizedText = (textObj, fallback = '') => {
+    if (typeof textObj === 'string') return textObj;
+    if (typeof textObj === 'object' && textObj) {
+      return textObj[language] || textObj.it || textObj.en || Object.values(textObj)[0] || fallback;
+    }
+    return fallback;
+  };
+
+  const {
+    nome,
+    tipo,
+    prezzo,
+    unita,
     categoria,
-    sottocategoria, 
-    descrizione, 
-    immagini, 
+    sottocategoria,
+    descrizione,
+    immagini,
     codice,
     tipoImballaggio,
     pezziPerCartone,
     cartoniPerEpal,
     pezziPerEpal
   } = product;
-  
+
+  // 🔥 CORREZIONE: Estrai i nomi localizzati
+  const productName = getLocalizedText(nome, t('product_without_name'));
+  const productCategory = getLocalizedText(categoria, t('category_not_specified'));
+  const productSubcategory = getLocalizedText(sottocategoria, '');
+  const productType = getLocalizedText(tipo, t('type_not_specified'));
+  const productDescription = getLocalizedText(descrizione, t('no_description_available'));
+
   return (
     <div className="product-detail">
       <div className="product-images">
         <div className="main-image">
           {immagini && immagini.length > 0 ? (
-            <img 
-              src={immagini[activeImage]} 
-              alt={nome} 
+            <img
+              src={immagini[activeImage]}
+              alt={productName}
               className="animate-fade-in"
             />
           ) : (
@@ -43,44 +59,44 @@ const ProductDetail = ({ product }) => {
             </div>
           )}
         </div>
-        
+
         {immagini && immagini.length > 1 && (
           <div className="thumbnail-gallery">
             {immagini.map((img, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className={`thumbnail ${index === activeImage ? 'active' : ''}`}
                 onClick={() => setActiveImage(index)}
               >
-                <img src={img} alt={`${nome} - ${t('image')} ${index + 1}`} />
+                <img src={img} alt={`${productName} - ${t('image')} ${index + 1}`} />
               </div>
             ))}
           </div>
         )}
       </div>
-      
+
       <div className="product-info">
         <div className="product-category">
-          <Link to={`/catalogo/categoria/${categoria}`}>{categoria}</Link>
+          <Link to={`/catalogo/categoria/${categoria}`}>{productCategory}</Link>
         </div>
-        
+
         {sottocategoria && (
           <div className="product-subcategory">
             <Link to={`/catalogo/categoria/${categoria}/sottocategoria/${sottocategoria}`}>
-              {sottocategoria}
+              {productSubcategory}
             </Link>
           </div>
         )}
-        
-        <h1 className="product-title">{nome}</h1>
+
+        <h1 className="product-title">{productName}</h1>
         {codice && <div className="product-code">{t('code')}: {codice}</div>}
-        <div className="product-type">{tipo}</div>
-        
+        <div className="product-type">{productType}</div>
+
         <div className="product-price">
           <span className="price">{typeof prezzo === 'number' ? prezzo.toFixed(2) : '0.00'} €</span>
           <span className="unit">{unita}</span>
         </div>
-        
+
         {tipoImballaggio && (
           <div className="product-packaging">
             <h3>{t('packaging_information')}</h3>
@@ -112,12 +128,12 @@ const ProductDetail = ({ product }) => {
             </table>
           </div>
         )}
-        
+
         <div className="product-description">
           <h3>{t('description')}</h3>
-          <p>{descrizione || t('no_description_available')}</p>
+          <p>{productDescription}</p>
         </div>
-        
+
         <div className="product-actions">
           <button className="contact-button">
             {t('request_information')}

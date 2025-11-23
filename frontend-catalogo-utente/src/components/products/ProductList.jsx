@@ -7,16 +7,16 @@ import './ProductList.css';
 const ProductList = ({ products, loading, error }) => {
   const { t } = useLanguage(); // Ottieni la funzione di traduzione
   const [visibleProducts, setVisibleProducts] = useState([]);
-  
+
   useEffect(() => {
     console.log("ProductList received products:", products);
-    
+
     if (products && products.length > 0) {
       // Simulate progressive loading for smooth animation
       const timer = setTimeout(() => {
         setVisibleProducts(products);
       }, 100);
-      
+
       return () => clearTimeout(timer);
     } else {
       setVisibleProducts([]);
@@ -51,10 +51,10 @@ const ProductList = ({ products, loading, error }) => {
   return (
     <div className="product-list">
       {visibleProducts.map((product, index) => {
-        console.log("Rendering product:", product._id, product.nome);
+        console.log("Rendering product:", product.productId, product.nome);
         return (
-          <div 
-            key={product._id} 
+          <div
+            key={product.productId}
             className="product-item animate-fade-in"
             style={{ animationDelay: `${index * 50}ms` }}
           >

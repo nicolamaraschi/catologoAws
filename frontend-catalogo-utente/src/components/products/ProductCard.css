@@ -1,147 +1,260 @@
-.product-card {
-  background-color: var(--card-background);
-  border-radius: var(--border-radius-md);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
-  height: 100%;
+/* === FIX URGENTE LAYOUT CATALOGO === */
+
+/* Forza il container principale a rimanere nei limiti */
+.catalog-page {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden; /* Impedisce scroll orizzontale */
+  padding: var(--space-6) 0 var(--space-12);
+}
+
+.container {
+  width: 100%;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+  box-sizing: border-box; /* IMPORTANTE: include padding nella larghezza */
+}
+
+/* Layout principale catalogo */
+.catalog-layout {
   display: flex;
   flex-direction: column;
+  gap: var(--space-8);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.product-card:hover {
-  transform: translateY(-5px);
-  box-shadow: var(--shadow-md);
+/* Sidebar fix */
+.catalog-sidebar {
+  width: 100%;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 
-.product-image {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 1 / 1;
-  background-color: #f9f9f9;
+/* Content area fix */
+.catalog-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0; /* IMPORTANTE: permette al flex item di ridursi */
+  flex: 1;
+  overflow: hidden; /* Impedisce overflow del contenuto */
 }
 
+/* Product list grid fix */
+.product-list {
+  display: grid;
+  gap: var(--space-6);
+  grid-template-columns: repeat(1, 1fr);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Product card fix */
+.product-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0; /* Rimuove eventuali margini che causano overflow */
+}
+
+/* === RESPONSIVE FIXES === */
+
+/* Mobile (fino a 640px) */
+@media (max-width: 640px) {
+  .container {
+    padding-left: var(--space-3);
+    padding-right: var(--space-3);
+  }
+  
+  .catalog-layout {
+    gap: var(--space-4);
+  }
+  
+  .product-list {
+    grid-template-columns: 1fr; /* Sempre una colonna su mobile */
+    gap: var(--space-4);
+  }
+}
+
+/* Small devices (640px+) */
+@media (min-width: 640px) {
+  .container {
+    max-width: var(--container-sm);
+    padding-left: var(--space-6);
+    padding-right: var(--space-6);
+  }
+  
+  .product-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5);
+  }
+}
+
+/* Medium devices (768px+) */
+@media (min-width: 768px) {
+  .container {
+    max-width: var(--container-md);
+  }
+  
+  .catalog-layout {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-8);
+  }
+  
+  .catalog-sidebar {
+    width: 18rem; /* Larghezza fissa per sidebar */
+    flex-shrink: 0;
+  }
+  
+  .catalog-content {
+    flex: 1;
+    min-width: 0; /* CRITICO: permette al contenuto di ridursi */
+  }
+  
+  .product-list {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+/* Large devices (1024px+) */
+@media (min-width: 1024px) {
+  .container {
+    max-width: var(--container-lg);
+  }
+  
+  .catalog-sidebar {
+    width: 20rem;
+  }
+  
+  .product-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Extra large devices (1280px+) */
+@media (min-width: 1280px) {
+  .container {
+    max-width: var(--container-xl);
+  }
+  
+  .catalog-sidebar {
+    width: 22rem;
+  }
+  
+  .product-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* === FIX AGGIUNTIVI === */
+
+/* Forza tutti gli elementi a rimanere nel container */
+.catalog-page * {
+  box-sizing: border-box;
+}
+
+/* Fix per filter section */
+.product-filter {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.filter-options {
+  width: 100%;
+  max-width: 100%;
+}
+
+.search-box {
+  width: 100%;
+  max-width: 100%;
+}
+
+.search-box input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Fix per sort box */
+.sort-box {
+  flex-shrink: 0;
+}
+
+.sort-box select {
+  min-width: 8rem;
+  max-width: 12rem;
+}
+
+/* === DEBUG (rimuovi dopo il fix) === */
+/* 
+.catalog-page {
+  border: 2px solid red !important;
+}
+
+.catalog-layout {
+  border: 2px solid blue !important;
+}
+
+.catalog-content {
+  border: 2px solid green !important;
+}
+
+.product-list {
+  border: 2px solid orange !important;
+}
+*/
+
+/* === FIX SCROLLBAR === */
+html {
+  overflow-x: hidden; /* Nasconde scrollbar orizzontale globale */
+}
+
+body {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* === FIX IMMAGINI CHE POSSONO CAUSARE OVERFLOW === */
 .product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform var(--transition-normal);
+  max-width: 100%; /* Impedisce alle immagini di espandersi oltre il container */
 }
 
-.product-card:hover .product-image img {
-  transform: scale(1.05);
-}
-
-.product-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity var(--transition-normal);
-}
-
-.product-card:hover .product-overlay {
-  opacity: 1;
-}
-
-.view-product {
-  display: inline-block;
-  background-color: var(--primary-color);
-  color: white;
-  padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: var(--border-radius-sm);
-  text-decoration: none;
-  font-weight: 500;
-  transition: background-color var(--transition-fast);
-  transform: translateY(20px);
-  opacity: 0;
-  transition: transform var(--transition-normal), opacity var(--transition-normal), background-color var(--transition-fast);
-}
-
-.product-card:hover .view-product {
-  transform: translateY(0);
-  opacity: 1;
-}
-
-.view-product:hover {
-  background-color: var(--primary-dark);
-}
-
-.product-info {
-  padding: var(--spacing-md);
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.product-category-tag {
-  display: inline-block;
-  background-color: rgba(63, 81, 181, 0.1);
-  color: var(--primary-color);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  font-size: calc(var(--font-size-xs) * 0.9);
-  margin-bottom: var(--spacing-xs);
-  align-self: flex-start;
-}
-
-.product-subcategory-tag {
-  display: inline-block;
-  background-color: rgba(245, 0, 87, 0.1);
-  color: var(--secondary-color);
-  padding: var(--spacing-xs) var(--spacing-sm);
-  border-radius: var(--border-radius-sm);
-  font-size: calc(var(--font-size-xs) * 0.9);
-  margin-bottom: var(--spacing-xs);
-  align-self: flex-start;
-}
-
-.product-title {
-  font-size: var(--font-size-md);
-  font-weight: 600;
-  margin-bottom: var(--spacing-xs);
-  color: var(--text-color);
-}
-
-.product-code {
-  font-size: var(--font-size-xs);
-  color: var(--text-light);
-  margin-bottom: var(--spacing-xs);
-}
-
+/* === FIX PER TESTI LUNGHI === */
+.product-title,
+.product-code,
 .product-type {
-  font-size: var(--font-size-sm);
-  color: var(--text-light);
-  margin-bottom: var(--spacing-xs);
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
 }
 
-.product-packaging {
-  font-size: var(--font-size-xs);
-  color: var(--text-light);
-  margin-bottom: var(--spacing-sm);
-  font-style: italic;
-}
-
-.product-price {
-  margin-top: auto;
-  display: flex;
-  align-items: baseline;
-  gap: var(--spacing-xs);
-}
-
-.price {
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.unit {
-  font-size: var(--font-size-sm);
-  color: var(--text-light);
+/* === FIX DEFINITIVO CONTAINER === */
+@media (min-width: 768px) {
+  .catalog-layout {
+    /* Usa calc per garantire che la larghezza sia sempre corretta */
+    width: calc(100% - 2rem); /* Sottrae il padding del container */
+    margin: 0 auto;
+  }
+  
+  .catalog-content {
+    /* Larghezza massima del content per evitare overflow */
+    max-width: calc(100vw - 18rem - 4rem - 2rem); /* viewport - sidebar - gaps - padding */
+  }
 }

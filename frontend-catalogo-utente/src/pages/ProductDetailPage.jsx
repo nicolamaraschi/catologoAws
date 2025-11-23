@@ -9,7 +9,7 @@ import './ProductDetailPage.css';
 const ProductDetailPage = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
-  const { language, t } = useLanguage(); 
+  const { language, t } = useLanguage();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -38,7 +38,7 @@ const ProductDetailPage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchProduct();
   }, [productId, language, t]); // Aggiunto 't' alle dipendenze per coerenza
 
@@ -88,15 +88,24 @@ const ProductDetailPage = () => {
     );
   }
 
+  // 🔥 HELPER: Estrae il testo localizzato
+  const getLocalizedText = (textObj, fallback = '') => {
+    if (typeof textObj === 'string') return textObj;
+    if (typeof textObj === 'object' && textObj) {
+      return textObj[language] || textObj.it || textObj.en || Object.values(textObj)[0] || fallback;
+    }
+    return fallback;
+  };
+
   return (
     <div className="product-detail-page">
       <div className="container">
         <div className="breadcrumb">
-          <Link to="/">{t('home')}</Link> / 
-          <Link to="/catalogo">{t('catalog')}</Link> / 
-          <span>{product.nome}</span>
+          <Link to="/">{t('home')}</Link> /
+          <Link to="/catalogo">{t('catalog')}</Link> /
+          <span>{getLocalizedText(product.nome, t('product'))}</span>
         </div>
-        
+
         <ProductDetail product={product} />
       </div>
     </div>

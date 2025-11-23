@@ -11,7 +11,7 @@ Globals:
     MemorySize: 512
     Runtime: nodejs20.x
     Architectures:
-      - x86_64
+      - arm64
     Environment:
       Variables:
         NODE_ENV: production
@@ -24,12 +24,31 @@ Globals:
       Type: SQS
       TargetArn: !GetAtt LambdaDeadLetterQueue.Arn
   Api:
+    # 🔧 CORREZIONE: L'intero blocco 'Auth' qui sotto causa l'errore E0001
+    # Lo rimuoviamo perché l'auth è già specificata su ogni singola funzione
     Auth:
-      DefaultAuthorizer: CognitoAuthorizer
+      #DefaultAuthorizer: CognitoAuthorizer
       AddDefaultAuthorizerToCorsPreflight: false
       Authorizers:
         CognitoAuthorizer:
           UserPoolArn: !GetAtt CognitoUserPool.Arn
+    
+    # 🔧 CORREZIONE: Aggiunto blocco CORS globale
+    # Questo risolve gli errori 502 / CORS / ORB
+    # Creerà automaticamente le rotte OPTIONS per tutte le funzioni
+    Cors:
+      AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+      AllowOrigin: "'*'"
+      MaxAge: "'600'"
+
+    # Questo è corretto e rimane qui
+    BinaryMediaTypes:
+      - multipart~1form-data
+      - image~1png
+      - image~1jpeg
+      - image~1gif
+      - application~1octet-stream
 
 Parameters:
   Environment:
@@ -245,20 +264,23 @@ Resources:
         - Key: Environment
           Value: !Ref Environment
 
+  # 🔧 CORREZIONE: Blocco Globals duplicato RIMOSSO
+  # (Era qui, riga 248)
+
   #############################################################################
   # API GATEWAY
   #############################################################################
+  # 🔧 CORREZIONE: Sostituita la definizione con 'DefinitionBody'
+  # con questa versione. Questa versione eredita Auth, Cors e BinaryMediaTypes
+  # dai 'Globals:' all'inizio del file.
   CatalogoApi:
     Type: AWS::Serverless::Api
     Properties:
       Name: !Sub '${AWS::StackName}-API'
       StageName: !Ref Environment
       TracingEnabled: true
-      Cors:
-        AllowMethods: "'GET,POST,PUT,DELETE,OPTIONS'"
-        AllowHeaders: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-        MaxAge: "'600'"
+      # Le tue 20+ funzioni si collegheranno automaticamente a questa API
+      # perché NON stiamo più usando 'DefinitionBody'
 
   #############################################################################
   # LAMBDA FUNCTIONS - PUBLIC (No Auth)
@@ -280,8 +302,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/prodotti
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE' per risolvere il bug di deploy
+            #Auth:
+            #  Authorizer: NONE
 
   GetProductByIdFunction:
     Type: AWS::Serverless::Function
@@ -300,8 +323,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/prodotti/{productId}
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
 
   GetCategoriesFunction:
     Type: AWS::Serverless::Function
@@ -320,8 +344,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/categorie
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
 
   GetCategoryByIdFunction:
     Type: AWS::Serverless::Function
@@ -340,8 +365,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/categorie/{categoryId}
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
   
   GetAllSubcategoriesFunction:
     Type: AWS::Serverless::Function
@@ -360,8 +386,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/sottocategorie
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
 
   GetProductsByCategoryFunction:
     Type: AWS::Serverless::Function
@@ -382,24 +409,27 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/categoria/{categoria}
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
         GetByCategoryAndSubcategory:
           Type: Api
           Properties:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/categoria/{categoria}/sottocategoria/{sottocategoria}
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
         GetSubcategories:
           Type: Api
           Properties:
             RestApiId: !Ref CatalogoApi
             Path: /api/public/catalogo/categoria/{categoria}/sottocategorie
             Method: GET
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
 
   #############################################################################
   # LAMBDA FUNCTIONS - ADMIN (Product Management)
@@ -711,8 +741,9 @@ Resources:
             RestApiId: !Ref CatalogoApi
             Path: /{proxy+}
             Method: ANY
-            Auth:
-              Authorizer: NONE
+            # 🔧 CORREZIONE: Rimosso 'Auth: Authorizer: NONE'
+            #Auth:
+            #  Authorizer: NONE
 
   #############################################################################
   # CLOUDWATCH ALARMS

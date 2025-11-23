@@ -6,9 +6,9 @@ import './ProductCard.css';
 
 const ProductCard = ({ product }) => {
   const { t, language } = useLanguage();
-  
+
   console.log("ProductCard rendering with product:", product);
-  
+
   if (!product) {
     console.log("ProductCard received null/undefined product");
     return (
@@ -28,34 +28,34 @@ const ProductCard = ({ product }) => {
     }
     return fallback;
   };
-  
-  const { 
-    _id, 
-    nome, 
-    tipo, 
-    prezzo, 
-    unita, 
-    immagini, 
+
+  const {
+    productId,
+    nome,
+    tipo,
+    prezzo,
+    unita,
+    immagini,
     categoria,
     sottocategoria,
     codice,
     tipoImballaggio
   } = product;
-  
+
   // 🔥 CORREZIONE: Estrai i nomi localizzati
   const productName = getLocalizedText(nome, t('product_without_name'));
   const productCategory = getLocalizedText(categoria, t('category_not_specified'));
   const productSubcategory = getLocalizedText(sottocategoria, '');
   const productType = getLocalizedText(tipo, t('type_not_specified'));
-  
+
   // Gestisci il caso in cui il prezzo sia undefined o non sia un numero
-  const formattedPrice = typeof prezzo === 'number' 
-    ? prezzo.toFixed(2) 
+  const formattedPrice = typeof prezzo === 'number'
+    ? prezzo.toFixed(2)
     : '0.00';
-  
+
   // Usa direttamente l'URL completo dall'API
-  const mainImage = immagini && Array.isArray(immagini) && immagini.length > 0 
-    ? immagini[0] 
+  const mainImage = immagini && Array.isArray(immagini) && immagini.length > 0
+    ? immagini[0]
     : '/placeholder-product.jpg';
 
   console.log("ProductCard image:", mainImage);
@@ -65,7 +65,7 @@ const ProductCard = ({ product }) => {
       <div className="product-image">
         <img src={mainImage} alt={productName} />
         <div className="product-overlay">
-          <Link to={`/prodotto/${_id}`} className="view-product">
+          <Link to={`/prodotto/${productId}`} className="view-product">
             {t('view')}
           </Link>
         </div>

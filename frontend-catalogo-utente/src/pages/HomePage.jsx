@@ -23,23 +23,23 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        
+
         // Fetch all products using the service
         const allProducts = await productService.getAllProducts(language);
-        
+
         // Take 4 random products or fewer if there are less than 4
-        const randomProducts = Array.isArray(allProducts) ? 
+        const randomProducts = Array.isArray(allProducts) ?
           allProducts
             .sort(() => 0.5 - Math.random())
             .slice(0, Math.min(4, allProducts.length)) :
           [];
-        
+
         setFeaturedProducts(randomProducts);
-        
+
         // Fetch subcategories using the service
         const subcategoriesData = await categoryService.getAllSubcategories(language);
         setSubcategories(subcategoriesData || {});
-        
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching homepage data:', err);
@@ -47,7 +47,7 @@ const HomePage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [language]); // Aggiungi language come dependency
 
@@ -80,7 +80,7 @@ const HomePage = () => {
             <h2>{t('featured_products')}</h2>
             <Link to="/catalogo" className="view-all">{t('view_all')}</Link>
           </div>
-          
+
           {loading ? (
             <div className="loading-container">
               <p>{t('loading_products')}</p>
@@ -96,7 +96,7 @@ const HomePage = () => {
           ) : (
             <div className="featured-products">
               {featuredProducts.map((product) => (
-                <div key={product._id || product.id} className="featured-product-item">
+                <div key={product.productId || product.id} className="featured-product-item">
                   <ProductCard product={product} />
                 </div>
               ))}
@@ -111,11 +111,11 @@ const HomePage = () => {
           <div className="section-header">
             <h2>{t('explore_by_category')}</h2>
           </div>
-          
+
           <div className="categories-grid">
             {categories.map((category) => (
-              <Link 
-                key={category.id} 
+              <Link
+                key={category.id}
                 to={`/catalogo/categoria/${encodeUrlParam(category.id)}`}
                 className="category-card"
               >
@@ -143,7 +143,7 @@ const HomePage = () => {
               <h3>{t('guaranteed_quality')}</h3>
               <p>{t('guaranteed_quality_description')}</p>
             </div>
-            
+
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdLocalShipping size={40} color="#3f51b5" />
@@ -151,7 +151,7 @@ const HomePage = () => {
               <h3>{t('fast_delivery')}</h3>
               <p>{t('fast_delivery_description')}</p>
             </div>
-            
+
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdSupportAgent size={40} color="#3f51b5" />
@@ -159,7 +159,7 @@ const HomePage = () => {
               <h3>{t('technical_support')}</h3>
               <p>{t('technical_support_description')}</p>
             </div>
-            
+
             <div className="benefit-card">
               <div className="benefit-icon">
                 <MdEco size={40} color="#3f51b5" />

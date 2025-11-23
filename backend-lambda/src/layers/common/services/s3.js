@@ -15,6 +15,50 @@ const s3Client = new S3Client({
   region: process.env.AWS_REGION || 'eu-west-1',
 });
 
+// #############################################################################
+// 🔧 FUNZIONE MANCANTE AGGIUNTA
+// #############################################################################
+
+/**
+ * Carica direttamente un buffer su S3.
+ * Questa è la funzione che createProduct.js sta cercando di chiamare.
+ * @param {object} params - Parametri
+ * @param {string} params.key - S3 key (es. 'products/uuid/file.png')
+ * @param {Buffer} params.body - Il contenuto binario del file
+ * @param {string} params.contentType - Il MIME type (es. 'image/png')
+ * @param {object} params.metadata - Metadati S3
+ * @returns {Promise<object>} Oggetto con l'URL pubblico
+ */
+async function uploadToS3({ key, body, contentType, metadata }) {
+  const operation = async () => {
+    try {
+      const command = new PutObjectCommand({
+        Bucket: BUCKETS.IMAGES,
+        Key: key,
+        Body: body,
+        ContentType: contentType,
+        Metadata: metadata
+      });
+
+      await s3Client.send(command);
+      
+      const url = buildPublicUrl(key);
+      console.info('✅ Direct upload successful', { key, url });
+      return { url };
+
+    } catch (error) {
+      console.error(`❌ S3 Direct Upload Error for key ${key}:`, error);
+      throw new Error('S3 upload failed');
+    }
+  };
+  
+  // Riusciamo anche questa operazione
+  return withRetry(operation, {
+    context: { operation: 'uploadToS3', key },
+  })();
+}
+
+
 /**
  * Generate presigned URL for uploading a file
  * @param {string} fileName - Original file name
@@ -23,6 +67,7 @@ const s3Client = new S3Client({
  * @returns {Promise<Object>} Presigned URL and file key
  */
 async function generatePresignedUploadUrl(fileName, fileType, folder = 'products') {
+  // ... (codice esistente, non modificato) ...
   const operation = async () => {
     try {
       // Validate file type
@@ -76,6 +121,7 @@ async function generatePresignedUploadUrl(fileName, fileType, folder = 'products
  * @returns {Promise<string>} Presigned download URL
  */
 async function generatePresignedDownloadUrl(fileKey, expiresIn = 3600) {
+  // ... (codice esistente, non modificato) ...
   const operation = async () => {
     try {
       // Check if file exists
@@ -113,6 +159,7 @@ async function generatePresignedDownloadUrl(fileKey, expiresIn = 3600) {
  * @returns {Promise<void>}
  */
 async function deleteFile(fileKey) {
+  // ... (codice esistente, non modificato) ...
   const operation = async () => {
     try {
       await s3Client.send(
@@ -139,6 +186,7 @@ async function deleteFile(fileKey) {
  * @returns {Promise<void>}
  */
 async function deleteMultipleFiles(fileKeys) {
+  // ... (codice esistente, non modificato) ...
   const operation = async () => {
     try {
       const deletePromises = fileKeys.map((fileKey) => deleteFile(fileKey));
@@ -162,6 +210,7 @@ async function deleteMultipleFiles(fileKeys) {
  * @returns {Promise<boolean>} True if file exists
  */
 async function fileExists(fileKey) {
+  // ... (codice esistente, non modificato) ...
   try {
     await s3Client.send(
       new HeadObjectCommand({
@@ -184,6 +233,7 @@ async function fileExists(fileKey) {
  * @returns {string|null} File key or null if invalid URL
  */
 function extractFileKeyFromUrl(url) {
+  // ... (codice esistente, non modificato) ...
   try {
     // Match patterns like:
     // https://bucket.s3.region.amazonaws.com/folder/file.jpg
@@ -203,6 +253,7 @@ function extractFileKeyFromUrl(url) {
  * @returns {string} Public URL
  */
 function buildPublicUrl(fileKey) {
+  // ... (codice esistente, non modificato) ...
   const region = process.env.AWS_REGION || 'eu-west-1';
   return `https://${BUCKETS.IMAGES}.s3.${region}.amazonaws.com/${fileKey}`;
 }
@@ -215,6 +266,7 @@ function buildPublicUrl(fileKey) {
  * @throws {ValidationError} If validation fails
  */
 function validateImageFile(fileName, fileType, fileSize) {
+  // ... (codice esistente, non modificato) ...
   // Check file type
   if (!IMAGE.ALLOWED_TYPES.includes(fileType)) {
     throw new ValidationError(
@@ -243,6 +295,9 @@ function validateImageFile(fileName, fileType, fileSize) {
 }
 
 module.exports = {
+  // 🔧 CORREZIONE: Aggiunta la funzione mancante
+  uploadToS3,
+  
   generatePresignedUploadUrl,
   generatePresignedDownloadUrl,
   deleteFile,

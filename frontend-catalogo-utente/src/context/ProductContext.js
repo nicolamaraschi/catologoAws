@@ -16,23 +16,23 @@ export const ProductProvider = ({ children }) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const data = await productService.getProductById(productId);
       setCurrentProduct(data);
-      
+
       // Optional: fetch related products (e.g., same category)
       if (data.categoria) {
         const allProducts = await productService.getAllProducts();
         const related = allProducts
-          .filter(prod => 
-            prod._id !== data._id && 
+          .filter(prod =>
+            prod.productId !== data.productId &&
             prod.categoria === data.categoria
           )
           .slice(0, 4); // Limit to 4 related products
-        
+
         setRelatedProducts(related);
       }
-      
+
       setLoading(false);
       return data;
     } catch (err) {
