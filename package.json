@@ -7,7 +7,9 @@
         "start:schede-tecniche": "cd frontend-schede-tecniche-admin && npm start",
         "start:catalogo-prodotti": "cd frontend-catalogo-utente && PORT=3006 npm start",
         "start:gestore-prodotti": "cd frontend-gestore-prodotti-admin && npm start",
-        "start:frontend-catalogo": "cd frontend-catalogo-admin && PORT=3007 npm start"
+        "start:frontend-catalogo": "cd frontend-catalogo-admin && PORT=3007 npm start",
+        "docs": "node swagger-server.js",
+        "docs:install": "npm install express swagger-ui-express js-yaml"
     },
     "devDependencies": {
         "concurrently": "^8.2.2"
@@ -18,9 +20,12 @@
         "@aws-sdk/lib-dynamodb": "^3.932.0",
         "axios": "^1.13.2",
         "dotenv": "^17.2.3",
+        "express": "^4.21.2",
+        "js-yaml": "^4.1.1",
         "lambda-multipart-parser": "^1.0.1",
         "mongodb": "^6.21.0",
         "react-icons": "^5.5.0",
+        "swagger-ui-express": "^5.0.1",
         "uuid": "^13.0.0"
     }
 }

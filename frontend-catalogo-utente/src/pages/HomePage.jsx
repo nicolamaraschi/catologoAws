@@ -61,14 +61,29 @@ const HomePage = () => {
       {/* Hero section */}
       <section className="hero-section">
         <div className="container">
-          <div className="hero-content">
-            <h1 className="animate-slide-from-left">{t('homepage_title')}</h1>
-            <p className="animate-slide-from-left delay-100">
-              {t('homepage_subtitle')}
-            </p>
-            <Link to="/catalogo" className="cta-button animate-slide-from-left delay-200">
-              {t('explore_catalog')}
-            </Link>
+          <div className="hero-container">
+            <div className="hero-content">
+              <h1 className="animate-slide-from-left">{t('homepage_title')}</h1>
+              <p className="animate-slide-from-left delay-100">
+                {t('homepage_subtitle')}
+              </p>
+              <Link to="/catalogo" className="cta-button animate-slide-from-left delay-200">
+                {t('explore_catalog')}
+              </Link>
+            </div>
+
+            <div className="hero-video-container animate-fade-in-up delay-300">
+              <video
+                className="hero-video"
+                controls
+                loop
+                playsInline
+                poster="/logo.png"
+              >
+                <source src="/companyProfileOrsiItaliano.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
           </div>
         </div>
       </section>

@@ -1,0 +1,1090 @@
+openapi: 3.0.3
+info:
+  title: Catalogo Prodotti API
+  description: |
+    API completa per la gestione del catalogo prodotti.
+    
+    ## Autenticazione
+    Le API pubbliche (`/api/public/*`) non richiedono autenticazione.
+    Le API admin (`/api/admin/*`) richiedono autenticazione tramite AWS Cognito.
+    
+    ## Struttura Dati
+    I campi multilingua (nome, categoria, descrizione, ecc.) sono oggetti con le seguenti chiavi:
+    - `it`: Italiano
+    - `en`: Inglese
+    - `de`: Tedesco
+    - `fr`: Francese
+    - `es`: Spagnolo
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+
+servers:
+  - url: https://your-api-gateway-url.execute-api.eu-west-1.amazonaws.com/production
+    description: Production server
+  - url: http://localhost:3001
+    description: Local development server
+
+tags:
+  - name: Public - Products
+    description: Endpoints pubblici per la gestione dei prodotti
+  - name: Public - Categories
+    description: Endpoints pubblici per la gestione delle categorie
+  - name: Admin - Products
+    description: Endpoints admin per la gestione dei prodotti (richiede autenticazione)
+  - name: Admin - Categories
+    description: Endpoints admin per la gestione delle categorie (richiede autenticazione)
+  - name: Admin - Upload
+    description: Endpoints admin per l'upload di immagini (richiede autenticazione)
+
+components:
+  securitySchemes:
+    CognitoAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Token JWT ottenuto da AWS Cognito
+
+  schemas:
+    MultilingualText:
+      type: object
+      properties:
+        it:
+          type: string
+          example: "Testo in italiano"
+        en:
+          type: string
+          example: "Text in English"
+        de:
+          type: string
+          example: "Text auf Deutsch"
+        fr:
+          type: string
+          example: "Texte en français"
+        es:
+          type: string
+          example: "Texto en español"
+
+    Product:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+          description: ID univoco del prodotto
+          example: "284d2c2e-0c5d-44cb-a39d-66c4196dd0a4"
+        codice:
+          type: string
+          description: Codice prodotto
+          example: "PROD-001"
+        nome:
+          $ref: '#/components/schemas/MultilingualText'
+        tipo:
+          $ref: '#/components/schemas/MultilingualText'
+        categoria:
+          $ref: '#/components/schemas/MultilingualText'
+        categoriaIt:
+          type: string
+          description: Categoria in italiano (campo flat per GSI)
+          example: "Domestico"
+        sottocategoria:
+          $ref: '#/components/schemas/MultilingualText'
+        sottocategoriaIt:
+          type: string
+          description: Sottocategoria in italiano (campo flat)
+          example: "Detergenti"
+        descrizione:
+          $ref: '#/components/schemas/MultilingualText'
+        prezzo:
+          type: number
+          format: float
+          description: Prezzo del prodotto in euro
+          example: 12.50
+        unita:
+          type: string
+          description: Unità di misura
+          example: "pz"
+        tipoImballaggio:
+          type: string
+          description: Tipo di imballaggio
+          example: "Cartone"
+        pezziPerCartone:
+          type: integer
+          description: Numero di pezzi per cartone
+          example: 12
+        cartoniPerEpal:
+          type: integer
+          description: Numero di cartoni per EPAL
+          example: 48
+        pezziPerEpal:
+          type: integer
+          description: Totale pezzi per EPAL (calcolato automaticamente)
+          example: 576
+        immagini:
+          type: array
+          items:
+            type: string
+            format: uri
+          description: Array di URL delle immagini del prodotto
+          example: ["https://cdn.example.com/image1.jpg", "https://cdn.example.com/image2.jpg"]
+        createdAt:
+          type: string
+          format: date-time
+          description: Data di creazione
+        updatedAt:
+          type: string
+          format: date-time
+          description: Data di ultimo aggiornamento
+
+    Category:
+      type: object
+      properties:
+        categoryName:
+          type: string
+          description: Nome identificativo della categoria
+          example: "Domestico"
+        translations:
+          $ref: '#/components/schemas/MultilingualText'
+
+    Subcategory:
+      type: object
+      properties:
+        subcategoryName:
+          type: string
+          description: Nome identificativo della sottocategoria
+          example: "Detergenti"
+        translations:
+          $ref: '#/components/schemas/MultilingualText'
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Dati della risposta
+        metadata:
+          type: object
+          description: Metadati aggiuntivi (es. paginazione)
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            message:
+              type: string
+              example: "Errore durante l'operazione"
+            code:
+              type: string
+              example: "INTERNAL_ERROR"
+
+    PresignedUrlRequest:
+      type: object
+      required:
+        - fileName
+        - fileType
+      properties:
+        fileName:
+          type: string
+          description: Nome del file da caricare
+          example: "product-image.jpg"
+        fileType:
+          type: string
+          description: MIME type del file
+          example: "image/jpeg"
+
+    PresignedUrlResponse:
+      type: object
+      properties:
+        uploadUrl:
+          type: string
+          format: uri
+          description: URL pre-firmato per l'upload
+        fileUrl:
+          type: string
+          format: uri
+          description: URL pubblico del file dopo l'upload
+        key:
+          type: string
+          description: Chiave S3 del file
+
+paths:
+  # ============================================================================
+  # PUBLIC ENDPOINTS - PRODUCTS
+  # ============================================================================
+  /api/public/catalogo/prodotti:
+    get:
+      tags:
+        - Public - Products
+      summary: Ottieni tutti i prodotti
+      description: Restituisce la lista di tutti i prodotti con supporto per la paginazione
+      parameters:
+        - name: limit
+          in: query
+          description: Numero massimo di prodotti da restituire
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: lastKey
+          in: query
+          description: Chiave per la paginazione (URL encoded JSON)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista prodotti recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+                      metadata:
+                        type: object
+                        properties:
+                          count:
+                            type: integer
+                          hasMore:
+                            type: boolean
+                          nextKey:
+                            type: string
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/prodotti/{productId}:
+    get:
+      tags:
+        - Public - Products
+      summary: Ottieni un prodotto per ID
+      description: Restituisce i dettagli di un singolo prodotto
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          description: ID univoco del prodotto
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prodotto recuperato con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Product'
+        '404':
+          description: Prodotto non trovato
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # PUBLIC ENDPOINTS - CATEGORIES
+  # ============================================================================
+  /api/public/catalogo/categorie:
+    get:
+      tags:
+        - Public - Categories
+      summary: Ottieni tutte le categorie
+      description: Restituisce la lista di tutte le categorie disponibili
+      responses:
+        '200':
+          description: Lista categorie recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MultilingualText'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/categorie/{categoryId}:
+    get:
+      tags:
+        - Public - Categories
+      summary: Ottieni una categoria per ID
+      description: Restituisce i dettagli di una singola categoria
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          description: Nome identificativo della categoria
+          schema:
+            type: string
+            example: "Domestico"
+      responses:
+        '200':
+          description: Categoria recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/MultilingualText'
+        '404':
+          description: Categoria non trovata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/sottocategorie:
+    get:
+      tags:
+        - Public - Categories
+      summary: Ottieni tutte le sottocategorie
+      description: Restituisce la lista di tutte le sottocategorie disponibili
+      responses:
+        '200':
+          description: Lista sottocategorie recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MultilingualText'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/categoria/{categoria}:
+    get:
+      tags:
+        - Public - Products
+      summary: Ottieni prodotti per categoria
+      description: Restituisce tutti i prodotti di una specifica categoria
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          description: Nome della categoria
+          schema:
+            type: string
+            example: "Domestico"
+      responses:
+        '200':
+          description: Prodotti recuperati con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/categoria/{categoria}/sottocategoria/{sottocategoria}:
+    get:
+      tags:
+        - Public - Products
+      summary: Ottieni prodotti per categoria e sottocategoria
+      description: Restituisce tutti i prodotti di una specifica categoria e sottocategoria
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          description: Nome della categoria
+          schema:
+            type: string
+            example: "Domestico"
+        - name: sottocategoria
+          in: path
+          required: true
+          description: Nome della sottocategoria
+          schema:
+            type: string
+            example: "Detergenti"
+      responses:
+        '200':
+          description: Prodotti recuperati con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/public/catalogo/categoria/{categoria}/sottocategorie:
+    get:
+      tags:
+        - Public - Categories
+      summary: Ottieni sottocategorie per categoria
+      description: Restituisce tutte le sottocategorie di una specifica categoria
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          description: Nome della categoria
+          schema:
+            type: string
+            example: "Domestico"
+      responses:
+        '200':
+          description: Sottocategorie recuperate con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MultilingualText'
+        '500':
+          description: Errore interno del server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================================================
+  # ADMIN ENDPOINTS - PRODUCTS
+  # ============================================================================
+  /api/admin/prodotti:
+    get:
+      tags:
+        - Admin - Products
+      summary: Ottieni tutti i prodotti (Admin)
+      description: Restituisce la lista di tutti i prodotti (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Numero massimo di prodotti da restituire
+          schema:
+            type: integer
+            default: 50
+        - name: lastKey
+          in: query
+          description: Chiave per la paginazione
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Lista prodotti recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Product'
+        '401':
+          description: Non autenticato
+        '500':
+          description: Errore interno del server
+
+    post:
+      tags:
+        - Admin - Products
+      summary: Crea un nuovo prodotto
+      description: Crea un nuovo prodotto nel catalogo (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - codice
+                - nome
+                - categoria
+              properties:
+                codice:
+                  type: string
+                nome:
+                  $ref: '#/components/schemas/MultilingualText'
+                tipo:
+                  $ref: '#/components/schemas/MultilingualText'
+                categoria:
+                  $ref: '#/components/schemas/MultilingualText'
+                sottocategoria:
+                  $ref: '#/components/schemas/MultilingualText'
+                descrizione:
+                  $ref: '#/components/schemas/MultilingualText'
+                prezzo:
+                  type: number
+                unita:
+                  type: string
+                tipoImballaggio:
+                  type: string
+                pezziPerCartone:
+                  type: integer
+                cartoniPerEpal:
+                  type: integer
+                immagini:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '201':
+          description: Prodotto creato con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Product'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '409':
+          description: Prodotto con questo codice già esistente
+        '500':
+          description: Errore interno del server
+
+  /api/admin/prodotti/{productId}:
+    get:
+      tags:
+        - Admin - Products
+      summary: Ottieni un prodotto per ID (Admin)
+      description: Restituisce i dettagli di un singolo prodotto (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prodotto recuperato con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Product'
+        '401':
+          description: Non autenticato
+        '404':
+          description: Prodotto non trovato
+        '500':
+          description: Errore interno del server
+
+    put:
+      tags:
+        - Admin - Products
+      summary: Aggiorna un prodotto
+      description: Aggiorna i dati di un prodotto esistente (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                codice:
+                  type: string
+                nome:
+                  $ref: '#/components/schemas/MultilingualText'
+                tipo:
+                  $ref: '#/components/schemas/MultilingualText'
+                categoria:
+                  $ref: '#/components/schemas/MultilingualText'
+                sottocategoria:
+                  $ref: '#/components/schemas/MultilingualText'
+                descrizione:
+                  $ref: '#/components/schemas/MultilingualText'
+                prezzo:
+                  type: number
+                unita:
+                  type: string
+                tipoImballaggio:
+                  type: string
+                pezziPerCartone:
+                  type: integer
+                cartoniPerEpal:
+                  type: integer
+                immagini:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Prodotto aggiornato con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Product'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '404':
+          description: Prodotto non trovato
+        '500':
+          description: Errore interno del server
+
+    delete:
+      tags:
+        - Admin - Products
+      summary: Elimina un prodotto
+      description: Elimina un prodotto dal catalogo (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Prodotto eliminato con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Non autenticato
+        '404':
+          description: Prodotto non trovato
+        '500':
+          description: Errore interno del server
+
+  # ============================================================================
+  # ADMIN ENDPOINTS - CATEGORIES
+  # ============================================================================
+  /api/admin/categorie:
+    get:
+      tags:
+        - Admin - Categories
+      summary: Ottieni tutte le categorie (Admin)
+      description: Restituisce la lista di tutte le categorie (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      responses:
+        '200':
+          description: Lista categorie recuperata con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MultilingualText'
+        '401':
+          description: Non autenticato
+        '500':
+          description: Errore interno del server
+
+    post:
+      tags:
+        - Admin - Categories
+      summary: Crea una nuova categoria
+      description: Crea una nuova categoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - categoryName
+                - translations
+              properties:
+                categoryName:
+                  type: string
+                  description: Nome identificativo della categoria
+                  example: "Domestico"
+                translations:
+                  $ref: '#/components/schemas/MultilingualText'
+      responses:
+        '201':
+          description: Categoria creata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '409':
+          description: Categoria già esistente
+        '500':
+          description: Errore interno del server
+
+  /api/admin/categorie/{categoria}:
+    put:
+      tags:
+        - Admin - Categories
+      summary: Aggiorna una categoria
+      description: Aggiorna le traduzioni di una categoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - translations
+              properties:
+                translations:
+                  $ref: '#/components/schemas/MultilingualText'
+      responses:
+        '200':
+          description: Categoria aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '404':
+          description: Categoria non trovata
+        '500':
+          description: Errore interno del server
+
+    delete:
+      tags:
+        - Admin - Categories
+      summary: Elimina una categoria
+      description: Elimina una categoria e tutte le sue sottocategorie (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Categoria eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Non autenticato
+        '404':
+          description: Categoria non trovata
+        '500':
+          description: Errore interno del server
+
+  /api/admin/categorie/{categoria}/sottocategorie:
+    get:
+      tags:
+        - Admin - Categories
+      summary: Ottieni sottocategorie per categoria (Admin)
+      description: Restituisce tutte le sottocategorie di una categoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sottocategorie recuperate con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MultilingualText'
+        '401':
+          description: Non autenticato
+        '500':
+          description: Errore interno del server
+
+    post:
+      tags:
+        - Admin - Categories
+      summary: Aggiungi una sottocategoria
+      description: Aggiunge una nuova sottocategoria a una categoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - subcategoryName
+                - translations
+              properties:
+                subcategoryName:
+                  type: string
+                  description: Nome identificativo della sottocategoria
+                  example: "Detergenti"
+                translations:
+                  $ref: '#/components/schemas/MultilingualText'
+      responses:
+        '201':
+          description: Sottocategoria creata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '500':
+          description: Errore interno del server
+
+  /api/admin/categorie/{categoria}/sottocategorie/{sottocategoria}:
+    put:
+      tags:
+        - Admin - Categories
+      summary: Aggiorna una sottocategoria
+      description: Aggiorna le traduzioni di una sottocategoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sottocategoria
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - translations
+              properties:
+                translations:
+                  $ref: '#/components/schemas/MultilingualText'
+      responses:
+        '200':
+          description: Sottocategoria aggiornata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '404':
+          description: Sottocategoria non trovata
+        '500':
+          description: Errore interno del server
+
+    delete:
+      tags:
+        - Admin - Categories
+      summary: Elimina una sottocategoria
+      description: Elimina una sottocategoria da una categoria (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      parameters:
+        - name: categoria
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: sottocategoria
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Sottocategoria eliminata con successo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Non autenticato
+        '404':
+          description: Sottocategoria non trovata
+        '500':
+          description: Errore interno del server
+
+  # ============================================================================
+  # ADMIN ENDPOINTS - UPLOAD
+  # ============================================================================
+  /api/admin/upload/presigned-url:
+    post:
+      tags:
+        - Admin - Upload
+      summary: Genera URL pre-firmato per upload
+      description: |
+        Genera un URL pre-firmato per caricare un'immagine su S3.
+        
+        **Flusso di utilizzo:**
+        1. Chiamare questo endpoint per ottenere l'URL pre-firmato
+        2. Usare l'URL per caricare il file direttamente su S3 (PUT request)
+        3. Usare il `fileUrl` restituito come URL dell'immagine nel prodotto
+        
+        (richiede autenticazione)
+      security:
+        - CognitoAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresignedUrlRequest'
+      responses:
+        '200':
+          description: URL pre-firmato generato con successo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PresignedUrlResponse'
+        '400':
+          description: Dati non validi
+        '401':
+          description: Non autenticato
+        '500':
+          description: Errore interno del server
