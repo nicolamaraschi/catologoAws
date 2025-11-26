@@ -1,0 +1,17 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - cd frontend-catalogo-admin
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: frontend-catalogo-admin/build
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - frontend-catalogo-admin/node_modules/**/*
