@@ -7,82 +7,103 @@
 /* === HERO SECTION === */
 .hero-section {
   position: relative;
-  background: var(--gradient-hero);
   color: var(--white);
   padding: var(--space-20) 0 var(--space-24);
   overflow: hidden;
-  min-height: 70vh;
+  min-height: 85vh;
   display: flex;
   align-items: center;
+  justify-content: center;
+}
+
+.hero-bg-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.hero-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+      rgba(10, 25, 60, 0.85) 0%,
+      rgba(30, 60, 114, 0.6) 100%);
+  z-index: 1;
 }
 
 .hero-container {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-12);
-  align-items: center;
-}
-
-@media (min-width: 1024px) {
-  .hero-container {
-    grid-template-columns: 1fr 1fr;
-  }
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .hero-content {
   position: relative;
-  z-index: var(--z-10);
-  max-width: 42rem;
-  text-align: left;
-}
-
-.hero-video-container {
-  position: relative;
-  z-index: var(--z-10);
-  width: 100%;
-  max-width: 600px;
-  /* Limita la larghezza massima */
-  aspect-ratio: 16 / 9;
-  /* Forza il formato panoramico */
-  border-radius: var(--radius-2xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-2xl);
-  transform: perspective(1000px) rotateY(-5deg);
-  transition: transform 0.5s ease;
+  max-width: 64rem;
+  text-align: center;
   margin: 0 auto;
-  background-color: rgba(0, 0, 0, 0.2);
-  /* Sfondo scuro mentre carica */
 }
 
-.hero-video-container:hover {
-  transform: perspective(1000px) rotateY(0deg);
+.hero-content.centered {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.hero-video {
-  width: 100%;
-  height: 100%;
-  /* Occupa tutto lo spazio del contenitore */
-  object-fit: cover;
-  /* Adatta il contenuto coprendo l'area */
-  display: block;
-  border-radius: var(--radius-2xl);
-}
+/* Removed .hero-video-container and .hero-video styles as they are no longer used */
 
 .hero-section h1 {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-extrabold);
   line-height: var(--line-height-tight);
   margin-bottom: var(--space-6);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  color: var(--white);
 }
 
 .hero-section p {
   font-size: var(--font-size-lg);
   line-height: var(--line-height-relaxed);
   margin-bottom: var(--space-8);
-  opacity: 0.95;
+  opacity: 1;
   font-weight: var(--font-weight-normal);
+  color: var(--white);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
+
+/* === COMPANY PROFILE VIDEO SECTION === */
+.company-video-section {
+  padding: var(--space-16) 0;
+  background-color: var(--white);
+}
+
+.company-video-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-2xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-2xl);
+}
+
+.company-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 
 .cta-button {
   display: inline-flex;

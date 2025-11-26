@@ -59,10 +59,16 @@ const HomePage = () => {
   return (
     <div className="home-page">
       {/* Hero section */}
+      {/* Hero section */}
       <section className="hero-section">
+        <video className="hero-bg-video" autoPlay loop muted playsInline>
+          <source src="/video.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-overlay"></div>
+
         <div className="container">
           <div className="hero-container">
-            <div className="hero-content">
+            <div className="hero-content centered">
               <h1 className="animate-slide-from-left">{t('homepage_title')}</h1>
               <p className="animate-slide-from-left delay-100">
                 {t('homepage_subtitle')}
@@ -71,19 +77,24 @@ const HomePage = () => {
                 {t('explore_catalog')}
               </Link>
             </div>
+          </div>
+        </div>
+      </section>
 
-            <div className="hero-video-container animate-fade-in-up delay-300">
-              <video
-                className="hero-video"
-                controls
-                loop
-                playsInline
-                poster="/logo.png"
-              >
-                <source src="/companyProfileOrsiItaliano.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
+      {/* Company Profile Video Section */}
+      <section className="company-video-section">
+        <div className="container">
+          <div className="company-video-wrapper">
+            <video
+              className="company-video"
+              controls
+              loop
+              playsInline
+              poster="/logo.png"
+            >
+              <source src="/companyProfileOrsiItaliano.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         </div>
       </section>
