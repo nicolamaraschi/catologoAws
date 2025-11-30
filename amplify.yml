@@ -4,7 +4,9 @@ applications:
       phases:
         preBuild:
           commands:
-            - npm ci --legacy-peer-deps
+            - nvm use 20
+            - node -v
+            - npm install --legacy-peer-deps
         build:
           commands:
             - CI=false npm run build
