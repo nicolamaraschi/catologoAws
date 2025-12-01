@@ -270,7 +270,7 @@ async function getProductsByCategory(categoria, options = {}) {
   const operation = async () => {
     try {
       const { limit = 50, lastEvaluatedKey = null } = options;
-      
+
       console.info('Querying products by category', {
         categoria,
         limit,
@@ -292,14 +292,14 @@ async function getProductsByCategory(categoria, options = {}) {
         params.ExclusiveStartKey = lastEvaluatedKey;
       }
 
-      console.info('DynamoDB Query params', { 
+      console.info('DynamoDB Query params', {
         indexName: params.IndexName,
         keyCondition: params.KeyConditionExpression,
-        categoria 
+        categoria
       });
 
       const response = await docClient.send(new QueryCommand(params));
-      
+
       console.info('Query results', {
         itemsCount: response.Items?.length || 0,
         hasMore: !!response.LastEvaluatedKey
@@ -334,7 +334,7 @@ async function getProductsByCategoryAndSubcategory(categoria, sottocategoria, op
   const operation = async () => {
     try {
       const { limit = 50, lastEvaluatedKey = null } = options;
-      
+
       console.info('Querying products by category and subcategory', {
         categoria,
         sottocategoria,
@@ -406,9 +406,11 @@ async function getCategories() {
         ProjectionExpression: 'categoryName, translations',
       };
       const response = await docClient.send(new ScanCommand(params));
-      // Restituisce solo l'oggetto translations, che corrisponde al formato
-      // che il frontend si aspettava dalla vecchia logica.
-      return response.Items.map(item => item.translations);
+      // Restituisce translations + categoryName (ID reale)
+      return response.Items.map(item => ({
+        ...item.translations,
+        categoryName: item.categoryName
+      }));
     } catch (error) {
       throw handleAWSError(error);
     }
@@ -420,7 +422,7 @@ async function getCategories() {
 
 /**
  * (RISCRITTA) Ottiene tutte le sottocategorie globali da CategoriesTable
- * @returns {Promise<Array>} Array di oggetti sottocategoria { it: '...', en: '...' }
+ * @returns {Promise<Array>} Array di oggetti sottocategoria { it: '...', en: '...', categoryName: '...', subcategoryName: '...' }
  */
 async function getAllSubcategories() {
   const operation = async () => {
@@ -432,8 +434,11 @@ async function getAllSubcategories() {
         ProjectionExpression: 'itemName, translations, categoryName',
       };
       const response = await docClient.send(new ScanCommand(params));
-      // Restituisce solo l'oggetto translations
-      return response.Items.map(item => item.translations);
+      return response.Items.map(item => ({
+        ...item.translations,
+        categoryName: item.categoryName,
+        subcategoryName: item.itemName.replace('SUB#', '')
+      }));
     } catch (error) {
       throw handleAWSError(error);
     }
@@ -459,7 +464,10 @@ async function getCategoryById(categoryName) {
       if (!response.Item) {
         throw new NotFoundError(`Category ${categoryName} not found`);
       }
-      return response.Item.translations;
+      return {
+        ...response.Item.translations,
+        categoryName: response.Item.categoryName
+      };
     } catch (error) {
       if (error instanceof NotFoundError) throw error;
       throw handleAWSError(error);
@@ -489,8 +497,10 @@ async function getSubcategories(categoria) {
         ProjectionExpression: 'itemName, translations',
       };
       const response = await docClient.send(new QueryCommand(params));
-      // Restituisce solo l'oggetto translations
-      return response.Items.map(item => item.translations);
+      return response.Items.map(item => ({
+        ...item.translations,
+        subcategoryName: item.itemName.replace('SUB#', '')
+      }));
     } catch (error) {
       throw handleAWSError(error);
     }
@@ -585,8 +595,7 @@ async function adminDeleteSubcategory(categoryName, subcategoryName) {
           ConditionExpression: 'attribute_exists(itemName)',
         })
       );
-    } catch (error)
-    {
+    } catch (error) {
       if (error.name === 'ConditionalCheckFailedException') {
         throw new NotFoundError(`Subcategory ${subcategoryName} not found in ${categoryName}`);
       }
@@ -643,7 +652,7 @@ async function adminDeleteCategory(categoryName) {
         ':category': categoryName,
       },
     };
-    
+
     let itemsToDelete;
     try {
       const queryResult = await docClient.send(new QueryCommand(queryParams));
@@ -674,7 +683,7 @@ async function adminDeleteCategory(categoryName) {
         [CATEGORIES_TABLE]: deleteRequests,
       },
     };
-    
+
     try {
       await docClient.send(new BatchWriteCommand(batchParams));
       return { message: `${itemsToDelete.length} items deleted for category ${categoryName}` };
@@ -682,11 +691,11 @@ async function adminDeleteCategory(categoryName) {
       throw handleAWSError(error);
     }
   };
-  
+
   // Usiamo un timeout più lungo per questa operazione complessa
   return withRetry(operation, {
     context: { operation: 'adminDeleteCategory', categoryName },
-    maxAttempts: 2, 
+    maxAttempts: 2,
   })();
 }
 

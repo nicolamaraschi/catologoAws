@@ -82,8 +82,8 @@ const SubcategoryManagement = () => {
 
     setLoading(true);
     try {
-      // Usa l'ID o il nome italiano come identificativo per la chiamata API
-      const catId = selectedCategory.it;
+      // Usa l'ID reale (categoryName) se disponibile, altrimenti fallback su IT
+      const catId = selectedCategory.categoryName || selectedCategory.it;
       const responseData = await getSubcategoriesByCategory(catId);
       setSubcategories(responseData || []);
       setLoading(false);
@@ -117,13 +117,9 @@ const SubcategoryManagement = () => {
     try {
       setLoading(true);
       const categoryData = {
-        id: newCategoryId, // O come si aspetta il backend
+        id: newCategoryId,
         ...newCategoryTranslations
       };
-
-      // Se il backend si aspetta { id: "...", translations: {...} } o appiattito, adatta qui.
-      // Assumo formato appiattito o gestito dal backend. 
-      // In base a api.js createCategory manda tutto il body.
 
       await createCategory(categoryData);
       await fetchCategories();
@@ -138,7 +134,8 @@ const SubcategoryManagement = () => {
   };
 
   const handleShowEditCategory = (cat) => {
-    setEditCategoryOriginalId(cat.it); // Usiamo IT come ID corrente
+    // Usa ID reale se c'è, altrimenti fallback
+    setEditCategoryOriginalId(cat.categoryName || cat.it);
     setEditCategoryTranslations({ ...cat });
     setError('');
     setShowEditCategoryModal(true);
@@ -147,13 +144,14 @@ const SubcategoryManagement = () => {
   const handleEditCategory = async () => {
     try {
       setLoading(true);
-      // updateCategory(oldName, newData)
       await updateCategory(editCategoryOriginalId, editCategoryTranslations);
       await fetchCategories();
 
       // Aggiorna anche la selezione corrente se abbiamo modificato quella
-      if (selectedCategory && selectedCategory.it === editCategoryOriginalId) {
-        setSelectedCategory(editCategoryTranslations);
+      // Nota: editCategoryOriginalId è l'ID, selectedCategory.categoryName è l'ID
+      if (selectedCategory && (selectedCategory.categoryName === editCategoryOriginalId || selectedCategory.it === editCategoryOriginalId)) {
+        // Aggiorna mantenendo l'ID originale
+        setSelectedCategory({ ...editCategoryTranslations, categoryName: editCategoryOriginalId });
       }
 
       setShowEditCategoryModal(false);
@@ -167,7 +165,7 @@ const SubcategoryManagement = () => {
   };
 
   const handleShowDeleteCategory = (cat) => {
-    setEditCategoryOriginalId(cat.it); // Usiamo IT come ID temporaneo per cancellazione
+    setEditCategoryOriginalId(cat.categoryName || cat.it);
     setError('');
     setShowDeleteCategoryModal(true);
   };
@@ -208,7 +206,8 @@ const SubcategoryManagement = () => {
         subcategoryName: newSubcategoryName,
         translations: newSubcategoryTranslations
       };
-      await addSubcategory(selectedCategory.it, subData);
+      const catId = selectedCategory.categoryName || selectedCategory.it;
+      await addSubcategory(catId, subData);
       await fetchSubcategories();
       setShowAddSubModal(false);
       setSuccess('Sottocategoria aggiunta!');
@@ -233,8 +232,10 @@ const SubcategoryManagement = () => {
       const subData = {
         translations: editSubcategoryTranslations
       };
-      // updateSubcategory(categoryName, subcategoryName, data)
-      await updateSubcategory(selectedCategory.it, selectedSubcategory.it, subData);
+      const catId = selectedCategory.categoryName || selectedCategory.it;
+      const subId = selectedSubcategory.subcategoryName || selectedSubcategory.it;
+
+      await updateSubcategory(catId, subId, subData);
       await fetchSubcategories();
       setShowEditSubModal(false);
       setSuccess('Sottocategoria aggiornata!');
@@ -255,7 +256,10 @@ const SubcategoryManagement = () => {
   const handleDeleteSubcategory = async () => {
     try {
       setLoading(true);
-      await deleteSubcategory(selectedCategory.it, selectedSubcategory.it);
+      const catId = selectedCategory.categoryName || selectedCategory.it;
+      const subId = selectedSubcategory.subcategoryName || selectedSubcategory.it;
+
+      await deleteSubcategory(catId, subId);
       await fetchSubcategories();
       setShowDeleteSubModal(false);
       setSuccess('Sottocategoria eliminata!');
