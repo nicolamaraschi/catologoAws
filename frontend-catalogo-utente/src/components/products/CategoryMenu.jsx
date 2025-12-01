@@ -5,20 +5,20 @@ import { useCatalog } from '../../context/CatalogContext';
 import './CategoryMenu.css';
 
 const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategory = null }) => {
-  const { products } = useCatalog(); // 🔥 USA I DATI VERI DAL CONTEXT
+  const { products, getLocalizedName } = useCatalog(); // 🔥 USA I DATI VERI DAL CONTEXT
   const [expandedCategories, setExpandedCategories] = useState({});
   const [categoriesWithSubs, setCategoriesWithSubs] = useState({});
 
-  // 🔥 ESTRAE categorie e sottocategorie DAI PRODOTTI VERI (una volta sola)
+  // 🔥 ESTRAE categorie e sottocategorie DAI PRODOTTI VERI (una volta sola o al cambio lingua)
   useEffect(() => {
     if (products.length === 0) return;
 
     const categoryMap = {};
-    
+
     products.forEach(product => {
-      const categoria = product.categoria?.it || product.categoria || '';
-      const sottocategoria = product.sottocategoria?.it || product.sottocategoria || '';
-      
+      const categoria = getLocalizedName(product.categoria);
+      const sottocategoria = getLocalizedName(product.sottocategoria);
+
       if (categoria) {
         if (!categoryMap[categoria]) {
           categoryMap[categoria] = new Set();
@@ -37,7 +37,7 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
 
     setCategoriesWithSubs(finalMap);
     console.log('✅ CategoryMenu: Real categories extracted:', finalMap);
-  }, [products]); // 🔥 DIPENDE SOLO da products
+  }, [products, getLocalizedName]); // 🔥 DIPENDE da products e dalla lingua
 
   const toggleCategory = (category) => {
     setExpandedCategories(prev => ({
@@ -66,27 +66,27 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
   return (
     <div className="category-menu">
       <h2 className="category-menu-title">Categorie</h2>
-      
+
       <ul className="category-list">
         <li className={!activeCategory ? 'active' : ''}>
           <Link to="/catalogo">Tutti i Prodotti</Link>
         </li>
-        
+
         {categories.map(category => {
           const isActive = category === activeCategory;
           const categorySubcategories = categoriesWithSubs[category] || [];
           const hasSubcategories = categorySubcategories.length > 0;
           const isExpanded = !!expandedCategories[category];
-          
+
           return (
             <li key={category} className={isActive ? 'active' : ''}>
               <div className="category-item">
                 <Link to={`/catalogo/categoria/${encodeUrlParam(category)}`}>
                   {category}
                 </Link>
-                
+
                 {hasSubcategories && (
-                  <button 
+                  <button
                     className={`toggle-button ${isExpanded ? 'expanded' : ''}`}
                     onClick={() => toggleCategory(category)}
                     type="button"
@@ -95,7 +95,7 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
                   </button>
                 )}
               </div>
-              
+
               {hasSubcategories && (
                 <ul className={`subcategory-list ${isExpanded ? 'expanded' : ''}`}>
                   {categorySubcategories.map(subcategory => (
