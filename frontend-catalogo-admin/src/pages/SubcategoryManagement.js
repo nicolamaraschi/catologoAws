@@ -308,30 +308,44 @@ const SubcategoryManagement = () => {
                 <div className="text-center p-4">Caricamento...</div>
               ) : (
                 <ListGroup variant="flush">
-                  {categories.map((cat, index) => (
-                    <ListGroup.Item
-                      key={index}
-                      active={selectedCategory && selectedCategory.it === cat.it}
-                      className="d-flex justify-content-between align-items-center"
-                      action
-                      onClick={() => setSelectedCategory(cat)}
-                    >
-                      <div className="flex-grow-1">
-                        <strong>{cat.it}</strong>
-                        <div className="small opacity-75">
-                          {['en', 'fr', 'es', 'de'].map(l => cat[l]).filter(Boolean).join(' | ')}
+                  {categories.map((cat, index) => {
+                    const isSelected = selectedCategory && selectedCategory.it === cat.it;
+                    return (
+                      <ListGroup.Item
+                        key={index}
+                        active={isSelected}
+                        className="d-flex justify-content-between align-items-center"
+                        action
+                        onClick={() => setSelectedCategory(cat)}
+                      >
+                        <div className="flex-grow-1">
+                          <strong>{cat.it}</strong>
+                          <div className={`small ${isSelected ? 'text-white-50' : 'text-muted'}`}>
+                            {['en', 'fr', 'es', 'de'].map(l => cat[l]).filter(Boolean).join(' | ')}
+                          </div>
                         </div>
-                      </div>
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <Button variant="link" className="text-white p-1" onClick={() => handleShowEditCategory(cat)}>
-                          <i className="bi bi-pencil-square"></i>
-                        </Button>
-                        <Button variant="link" className="text-white p-1" onClick={() => handleShowDeleteCategory(cat)}>
-                          <i className="bi bi-trash"></i>
-                        </Button>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <Button
+                            variant={isSelected ? "light" : "outline-primary"}
+                            size="sm"
+                            className="me-2"
+                            onClick={() => handleShowEditCategory(cat)}
+                            title="Modifica Categoria"
+                          >
+                            <i className="bi bi-pencil-square"></i>
+                          </Button>
+                          <Button
+                            variant={isSelected ? "light" : "outline-danger"}
+                            size="sm"
+                            onClick={() => handleShowDeleteCategory(cat)}
+                            title="Elimina Categoria"
+                          >
+                            <i className="bi bi-trash"></i>
+                          </Button>
+                        </div>
+                      </ListGroup.Item>
+                    );
+                  })}
                 </ListGroup>
               )}
             </Card.Body>
@@ -374,10 +388,10 @@ const SubcategoryManagement = () => {
                       </div>
                       <div>
                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditSub(sub)}>
-                          <i className="bi bi-pencil"></i>
+                          <i className="bi bi-pencil"></i> Modifica
                         </Button>
                         <Button variant="outline-danger" size="sm" onClick={() => handleShowDeleteSub(sub)}>
-                          <i className="bi bi-trash"></i>
+                          <i className="bi bi-trash"></i> Elimina
                         </Button>
                       </div>
                     </ListGroup.Item>
