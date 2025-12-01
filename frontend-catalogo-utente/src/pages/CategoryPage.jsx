@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
@@ -13,22 +13,22 @@ const CatalogPage = () => {
   const { categoryId, subcategoryId } = useParams();
   const { language, t } = useLanguage();
   const [products, setProducts] = useState([]);
-  const [subcategories, setSubcategories] = useState([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     search: '',
     sort: 'name-asc'
   });
-  
+
   const handleFilterChange = useCallback((newFilters) => {
     setFilters(prevFilters => {
       const hasChanges = Object.keys(newFilters).some(
         key => prevFilters[key] !== newFilters[key]
       );
-      
+
       if (!hasChanges) return prevFilters;
-      
+
       return { ...prevFilters, ...newFilters };
     });
   }, []);
@@ -38,19 +38,15 @@ const CatalogPage = () => {
       try {
         setLoading(true);
         let productsData;
-        
+
         if (subcategoryId && categoryId) {
           productsData = await productService.getProductsBySubcategory(categoryId, subcategoryId, language);
-          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
-          setSubcategories(subcategoriesData || []);
         } else if (categoryId) {
           productsData = await productService.getProductsByCategory(categoryId, language);
-          const subcategoriesData = await categoryService.getSubcategoriesByCategory(categoryId, language);
-          setSubcategories(subcategoriesData || []);
         } else {
           productsData = await productService.getAllProducts(language);
         }
-        
+
         console.log('ProductsData received:', productsData);
         setProducts(Array.isArray(productsData) ? productsData : []);
         setLoading(false);
@@ -60,38 +56,38 @@ const CatalogPage = () => {
         setLoading(false);
       }
     };
-    
+
     fetchData();
   }, [categoryId, subcategoryId, language]);
 
   const filteredProducts = useMemo(() => {
     console.log("Filtering products, total:", products?.length || 0, products);
-    
+
     if (!Array.isArray(products) || products.length === 0) {
       console.log("No products to filter");
       return [];
     }
-    
+
     const filtered = products
       .filter(product => {
         if (!product) {
           console.log("Skipping null/undefined product");
           return false;
         }
-        
+
         if (filters.search && typeof filters.search === 'string' && filters.search.trim() !== '') {
           const searchTerm = filters.search.toLowerCase();
           const productName = (product.nome && typeof product.nome === 'string') ? product.nome.toLowerCase() : '';
           const productCode = (product.codice && typeof product.codice === 'string') ? product.codice.toLowerCase() : '';
-          
+
           return productName.includes(searchTerm) || productCode.includes(searchTerm);
         }
-        
+
         return true;
       })
       .sort((a, b) => {
         if (!a || !b) return 0;
-        
+
         switch (filters.sort) {
           case 'name-asc': {
             const nameA = (a.nome && typeof a.nome === 'string') ? a.nome : '';
@@ -117,7 +113,7 @@ const CatalogPage = () => {
             return 0;
         }
       });
-    
+
     console.log("Filtered products:", filtered.length, filtered);
     return filtered;
   }, [products, filters.search, filters.sort]);
@@ -128,8 +124,8 @@ const CatalogPage = () => {
         <div className="container">
           <h2>{t('error_occurred')}</h2>
           <p>{error.message || t('error_loading_data')}</p>
-          <button 
-            onClick={() => navigate('/catalogo')} 
+          <button
+            onClick={() => navigate('/catalogo')}
             className="button button-primary"
           >
             {t('back_to_catalog')}
@@ -139,9 +135,7 @@ const CatalogPage = () => {
     );
   }
 
-  const encodeUrlParam = (param) => {
-    return encodeURIComponent(param);
-  };
+
 
   return (
     <div className="catalog-page">
@@ -150,27 +144,27 @@ const CatalogPage = () => {
           <h1>{t('catalog')}</h1>
           <p>Esplora tutti i nostri prodotti per l'igiene e la pulizia</p>
         </div>
-        
+
         <div className="catalog-layout">
           <aside className="catalog-sidebar">
-            <CategoryMenu 
+            <CategoryMenu
               loading={loading}
               activeCategory={categoryId}
               activeSubcategory={subcategoryId}
             />
           </aside>
-          
+
           <div className="catalog-content">
-            <ProductFilter 
-              filters={filters} 
-              onFilterChange={handleFilterChange} 
+            <ProductFilter
+              filters={filters}
+              onFilterChange={handleFilterChange}
               totalProducts={filteredProducts.length}
             />
-            
-            <ProductList 
-              products={filteredProducts} 
-              loading={loading} 
-              error={error} 
+
+            <ProductList
+              products={filteredProducts}
+              loading={loading}
+              error={error}
             />
           </div>
         </div>
