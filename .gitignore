@@ -77,5 +77,4 @@ deployment-outputs.env
 stack-outputs-backup-*.json
 
 
-**/api.js
 **/aws-config.js
