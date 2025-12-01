@@ -314,22 +314,27 @@ const SubcategoryManagement = () => {
                       <ListGroup.Item
                         key={index}
                         active={isSelected}
-                        className="d-flex justify-content-between align-items-center"
-                        action
-                        onClick={() => setSelectedCategory(cat)}
+                        className="d-flex justify-content-between align-items-center p-2"
                       >
-                        <div className="flex-grow-1">
+                        <div
+                          className="flex-grow-1"
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => setSelectedCategory(cat)}
+                        >
                           <strong>{cat.it}</strong>
                           <div className={`small ${isSelected ? 'text-white-50' : 'text-muted'}`}>
                             {['en', 'fr', 'es', 'de'].map(l => cat[l]).filter(Boolean).join(' | ')}
                           </div>
                         </div>
-                        <div onClick={(e) => e.stopPropagation()}>
+
+                        <div className="d-flex gap-2">
                           <Button
                             variant={isSelected ? "light" : "outline-primary"}
                             size="sm"
-                            className="me-2"
-                            onClick={() => handleShowEditCategory(cat)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShowEditCategory(cat);
+                            }}
                             title="Modifica Categoria"
                           >
                             <i className="bi bi-pencil-square"></i>
@@ -337,7 +342,10 @@ const SubcategoryManagement = () => {
                           <Button
                             variant={isSelected ? "light" : "outline-danger"}
                             size="sm"
-                            onClick={() => handleShowDeleteCategory(cat)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleShowDeleteCategory(cat);
+                            }}
                             title="Elimina Categoria"
                           >
                             <i className="bi bi-trash"></i>

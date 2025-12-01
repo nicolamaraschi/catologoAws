@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { fetchAuthSession, signOut } from 'aws-amplify/auth'; 
+import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 
 // 1. Ora legge l'URL dal file .env (che hai creato)
 const API_URL = process.env.REACT_APP_API_BASE_URL;
@@ -22,11 +22,11 @@ api.interceptors.request.use(
   async (config) => {
     console.group('🌐 Request Details');
     console.log('Full Request URL:', `${config.baseURL}${config.url}`);
-    
+
     try {
       const session = await fetchAuthSession();
       const token = session.tokens?.idToken?.toString();
-      
+
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
@@ -59,14 +59,14 @@ api.interceptors.response.use(
       }
     }
     console.groupEnd();
-    
+
     // Come visto nei tuoi log, la risposta è { data: [...] }.
     // Noi vogliamo restituire solo l'array all'interno.
     if (response.data && response.data.data !== undefined) {
       // Restituisce solo l'array incapsulato
       return response.data.data;
     }
-    
+
     // Se la risposta non ha 'data.data' (es. un GET by ID), 
     // restituisci l'intero response.data
     return response.data;
@@ -78,10 +78,10 @@ api.interceptors.response.use(
     if (error.response) {
       console.error('Response Status:', error.response.status);
       console.error('Response Data:', error.response.data);
-      
+
       if (error.response.status === 401) {
         console.error('Token non autorizzato! Logout in corso.');
-        signOut(); 
+        signOut();
       }
     }
     console.groupEnd();
@@ -96,15 +96,15 @@ api.interceptors.response.use(
 export const createProdotto = async (prodottoData, immagini = []) => {
   try {
     const formData = new FormData();
-    
+
     // 1. Aggiungi tutti i campi come JSON stringificato
     Object.keys(prodottoData).forEach(key => {
       const value = prodottoData[key];
 
       if (value === undefined) {
-        return; 
-      } 
-      
+        return;
+      }
+
       if (typeof value === 'object' && value !== null) {
         // Stringify per oggetti e array (nome, descrizione, categoria, ecc.)
         formData.append(key, JSON.stringify(value));
@@ -113,11 +113,11 @@ export const createProdotto = async (prodottoData, immagini = []) => {
         formData.append(key, value);
       }
     });
-    
+
     // 2. Aggiungi le immagini
     if (immagini && immagini.length > 0) {
       immagini.forEach((file) => {
-        formData.append('immagini', file); 
+        formData.append('immagini', file);
       });
       console.log(`📷 Added ${immagini.length} images to FormData`);
     } else {
@@ -141,7 +141,7 @@ export const createProdotto = async (prodottoData, immagini = []) => {
         'Content-Type': 'multipart/form-data'
       }
     });
-    
+
     console.log('✅ API: Product created:', response.data);
     return response.data;
 
@@ -157,18 +157,18 @@ export const getProdottoById = (productId) => api.get(`/prodotti/${productId}`);
 export const updateProdotto = async (id, prodottoData, immagini = []) => {
   try {
     const formData = new FormData();
-    
+
     Object.keys(prodottoData).forEach(key => {
       const value = prodottoData[key];
       if (value === undefined) return;
-      
+
       if (typeof value === 'object' && value !== null) {
         formData.append(key, JSON.stringify(value));
       } else {
         formData.append(key, value);
       }
     });
-    
+
     if (immagini?.length > 0) {
       immagini.forEach((file) => formData.append('immagini', file));
     }
@@ -179,7 +179,7 @@ export const updateProdotto = async (id, prodottoData, immagini = []) => {
         'Content-Type': 'multipart/form-data'
       }
     });
-    
+
     return response.data;
 
   } catch (error) {
@@ -197,22 +197,22 @@ export const getAllCategories = () => {
 
 export const getSubcategoriesByCategory = (category) => {
   console.log('🔍 Calling getSubcategoriesByCategory for:', category);
-  return api.get(`/categorie/${category}/sottocategorie`);
+  return api.get(`/categorie/${encodeURIComponent(category)}/sottocategorie`);
 };
 
 export const addSubcategory = (category, subcategoryData) => {
-  return api.post(`/categorie/${category}/sottocategorie`, subcategoryData);
+  return api.post(`/categorie/${encodeURIComponent(category)}/sottocategorie`, subcategoryData);
 };
 export const updateSubcategory = (category, subcategoryName, subcategoryData) => {
-  return api.put(`/categorie/${category}/sottocategorie/${subcategoryName}`, subcategoryData);
+  return api.put(`/categorie/${encodeURIComponent(category)}/sottocategorie/${encodeURIComponent(subcategoryName)}`, subcategoryData);
 };
 export const deleteSubcategory = (category, subcategoryName) => {
-  return api.delete(`/categorie/${category}/sottocategorie/${subcategoryName}`);
+  return api.delete(`/categorie/${encodeURIComponent(category)}/sottocategorie/${encodeURIComponent(subcategoryName)}`);
 };
 
 export const createCategory = (categoryData) => api.post('/categorie', categoryData);
-export const updateCategory = (categoryName, categoryData) => api.put(`/categorie/${categoryName}`, categoryData);
-export const deleteCategory = (categoryName) => api.delete(`/categorie/${categoryName}`);
+export const updateCategory = (categoryName, categoryData) => api.put(`/categorie/${encodeURIComponent(categoryName)}`, categoryData);
+export const deleteCategory = (categoryName) => api.delete(`/categorie/${encodeURIComponent(categoryName)}`);
 
 // Funzione Upload
 export const getPresignedUrl = (uploadData) => api.post('/upload/presigned-url', uploadData);
