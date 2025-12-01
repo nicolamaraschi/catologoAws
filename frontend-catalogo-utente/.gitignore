@@ -17,9 +17,7 @@
 .env.*
 *.env
 
-# Ignore api.js everywhere
-api.js
-**/api.js
+
 
 npm-debug.log*
 yarn-debug.log*
