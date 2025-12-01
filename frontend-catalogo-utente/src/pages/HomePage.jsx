@@ -62,7 +62,7 @@ const HomePage = () => {
       {/* Hero section */}
       <section className="hero-section">
         <video className="hero-bg-video" autoPlay loop muted playsInline>
-          <source src="/video.mp4" type="video/mp4" />
+          <source src="/video.mp4?v=2" type="video/mp4" />
         </video>
         <div className="hero-overlay"></div>
 
@@ -92,7 +92,7 @@ const HomePage = () => {
               playsInline
               poster="/logo.png"
             >
-              <source src="/companyProfileOrsiItaliano.mp4" type="video/mp4" />
+              <source src="/companyProfileOrsiItaliano.mp4?v=2" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
           </div>
