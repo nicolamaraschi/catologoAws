@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCatalog } from '../../context/CatalogContext';
+import { useLanguage } from '../../context/LanguageContext';
+import { normalizeCategory } from '../../utils/categoryUtils';
 import './CategoryMenu.css';
 
 const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategory = null }) => {
   const { products, getLocalizedName } = useCatalog(); // 🔥 USA I DATI VERI DAL CONTEXT
+  const { t } = useLanguage();
   const [expandedCategories, setExpandedCategories] = useState({});
   const [categoriesWithSubs, setCategoriesWithSubs] = useState({});
 
@@ -16,8 +19,14 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
     const categoryMap = {};
 
     products.forEach(product => {
-      const categoria = getLocalizedName(product.categoria);
+      const rawCategory = getLocalizedName(product.categoria);
+      const categoria = normalizeCategory(rawCategory);
       const sottocategoria = getLocalizedName(product.sottocategoria);
+
+      // Debug log for German language issues
+      if (rawCategory && !categoria) {
+        console.warn('⚠️ CategoryMenu: Unmatched category:', rawCategory, 'Normalized:', categoria);
+      }
 
       if (categoria) {
         if (!categoryMap[categoria]) {
@@ -82,7 +91,7 @@ const CategoryMenu = ({ loading = false, activeCategory = null, activeSubcategor
             <li key={category} className={isActive ? 'active' : ''}>
               <div className="category-item">
                 <Link to={`/catalogo/categoria/${encodeUrlParam(category)}`}>
-                  {category}
+                  {category === 'Domestico' ? t('domestic') : (category === 'Professione' ? t('profession') : category)}
                 </Link>
 
                 {hasSubcategories && (

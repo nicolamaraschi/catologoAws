@@ -5,11 +5,20 @@ import './ProductFilter.css';
 
 const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) => {
   const [localSearch, setLocalSearch] = useState(filters.search || '');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const { t } = useLanguage();
   const isInitialMount = useRef(true);
   const debounceTimerRef = useRef(null);
   const previousFiltersRef = useRef(filters);
-  
+  const dropdownRef = useRef(null);
+
+  const sortOptions = [
+    { value: 'name-asc', label: t('name_asc') || 'Nome (A-Z)' },
+    { value: 'name-desc', label: t('name_desc') || 'Nome (Z-A)' },
+    { value: 'price-asc', label: t('price_asc') || 'Prezzo (Crescente)' },
+    { value: 'price-desc', label: t('price_desc') || 'Prezzo (Decrescente)' }
+  ];
+
   // Sincronizza lo stato locale quando cambia il filtro esterno
   useEffect(() => {
     if (isInitialMount.current) {
@@ -18,11 +27,11 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
       return;
     }
 
-    if (filters.search !== previousFiltersRef.current.search && 
-        filters.search !== localSearch) {
+    if (filters.search !== previousFiltersRef.current.search &&
+      filters.search !== localSearch) {
       setLocalSearch(filters.search);
     }
-    
+
     previousFiltersRef.current = filters;
   }, [filters, localSearch]);
 
@@ -30,36 +39,46 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
   const handleSearchChange = (e) => {
     const newValue = e.target.value;
     setLocalSearch(newValue);
-    
+
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
-    
+
     debounceTimerRef.current = setTimeout(() => {
       onFilterChange({ search: newValue });
     }, 300);
   };
-  
-  // Clean up del timer
+
+  // Clean up del timer e click outside
   useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
+      document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-  
+
   // Gestione dell'ordinamento
-  const handleSortChange = (e) => {
-    onFilterChange({ sort: e.target.value });
+  const handleSortSelect = (value) => {
+    onFilterChange({ sort: value });
+    setIsDropdownOpen(false);
   };
-  
+
   // Pulizia della ricerca
   const clearSearch = () => {
     setLocalSearch('');
     onFilterChange({ search: '' });
   };
-  
+
   return (
     <div className="product-filter">
       <div className="filter-options">
@@ -70,7 +89,7 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
             value={localSearch}
             onChange={handleSearchChange}
           />
-          <button 
+          <button
             className="clear-search"
             onClick={clearSearch}
             style={{ visibility: localSearch ? 'visible' : 'hidden' }}
@@ -80,22 +99,35 @@ const ProductFilter = React.memo(({ filters, onFilterChange, totalProducts }) =>
             ×
           </button>
         </div>
-        
-        <div className="sort-box">
-          <label htmlFor="sort">{t('sort_by') || 'Ordina per'}:</label>
-          <select
-            id="sort"
-            value={filters.sort || 'name-asc'}
-            onChange={handleSortChange}
+
+        <div className="sort-box custom-dropdown" ref={dropdownRef}>
+          <span className="sort-label">{t('sort_by') || 'Ordina per'}:</span>
+          <button
+            className="sort-toggle"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            aria-haspopup="true"
+            aria-expanded={isDropdownOpen}
           >
-            <option value="name-asc">{t('name_asc') || 'Nome (A-Z)'}</option>
-            <option value="name-desc">{t('name_desc') || 'Nome (Z-A)'}</option>
-            <option value="price-asc">{t('price_asc') || 'Prezzo (Crescente)'}</option>
-            <option value="price-desc">{t('price_desc') || 'Prezzo (Decrescente)'}</option>
-          </select>
+            {sortOptions.find(opt => opt.value === (filters.sort || 'name-asc'))?.label}
+            <span className="dropdown-arrow">▼</span>
+          </button>
+
+          {isDropdownOpen && (
+            <div className="dropdown-menu">
+              {sortOptions.map(option => (
+                <button
+                  key={option.value}
+                  className={`dropdown-item ${filters.sort === option.value ? 'active' : ''}`}
+                  onClick={() => handleSortSelect(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-      
+
       <div className="filter-summary">
         <span className="products-count">
           {totalProducts} {totalProducts === 1 ? t('product') || 'prodotto' : t('products') || 'prodotti'}

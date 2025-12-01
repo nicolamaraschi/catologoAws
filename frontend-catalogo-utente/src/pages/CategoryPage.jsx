@@ -4,16 +4,16 @@ import ProductList from '../components/products/ProductList';
 import CategoryMenu from '../components/products/CategoryMenu';
 import ProductFilter from '../components/products/ProductFilter';
 import { useLanguage } from '../context/LanguageContext';
-import productService from '../services/productService';
-import categoryService from '../services/categoryService';
+import { useCatalog } from '../context/CatalogContext';
+import { normalizeCategory } from '../utils/categoryUtils';
 import './CatalogPage.css'; // Corretto il nome del CSS
 
 const CatalogPage = () => {
   const navigate = useNavigate();
   const { categoryId, subcategoryId } = useParams();
   const { language, t } = useLanguage();
+  const { products: allProducts, loading: catalogLoading, getLocalizedName } = useCatalog();
   const [products, setProducts] = useState([]);
-
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -34,31 +34,40 @@ const CatalogPage = () => {
   }, []);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        let productsData;
+    if (catalogLoading) {
+      setLoading(true);
+      return;
+    }
 
-        if (subcategoryId && categoryId) {
-          productsData = await productService.getProductsBySubcategory(categoryId, subcategoryId, language);
-        } else if (categoryId) {
-          productsData = await productService.getProductsByCategory(categoryId, language);
-        } else {
-          productsData = await productService.getAllProducts(language);
-        }
+    try {
+      console.log('Filtering products for category:', categoryId, 'subcategory:', subcategoryId);
 
-        console.log('ProductsData received:', productsData);
-        setProducts(Array.isArray(productsData) ? productsData : []);
-        setLoading(false);
-      } catch (err) {
-        console.error('Error fetching category data:', err);
-        setError(err);
-        setLoading(false);
+      let filtered = allProducts;
+
+      if (categoryId) {
+        filtered = filtered.filter(product => {
+          const rawCategory = getLocalizedName(product.categoria);
+          const normalizedCat = normalizeCategory(rawCategory);
+          return normalizedCat === categoryId;
+        });
       }
-    };
 
-    fetchData();
-  }, [categoryId, subcategoryId, language]);
+      if (subcategoryId) {
+        filtered = filtered.filter(product => {
+          const sub = getLocalizedName(product.sottocategoria);
+          return sub === subcategoryId;
+        });
+      }
+
+      console.log('Filtered products count:', filtered.length);
+      setProducts(filtered);
+      setLoading(false);
+    } catch (err) {
+      console.error('Error filtering products:', err);
+      setError(err);
+      setLoading(false);
+    }
+  }, [categoryId, subcategoryId, allProducts, catalogLoading, getLocalizedName]);
 
   const filteredProducts = useMemo(() => {
     console.log("Filtering products, total:", products?.length || 0, products);

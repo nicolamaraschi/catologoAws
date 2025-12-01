@@ -24,17 +24,17 @@ export const CatalogProvider = ({ children }) => {
   // 🔥 UNA SOLA CHIAMATA API
   useEffect(() => {
     if (dataLoaded) return; // Non ricaricare se già caricato
-    
+
     const fetchProducts = async () => {
       try {
         setLoading(true);
         console.log('🔍 CatalogContext: Loading products (ONCE)...');
-        
+
         const productsData = await productService.getAllProducts();
         setProducts(productsData || []);
         setDataLoaded(true);
         setLoading(false);
-        
+
         console.log('✅ CatalogContext: Products loaded:', productsData?.length || 0);
       } catch (err) {
         console.error('❌ CatalogContext: Error:', err);
@@ -42,7 +42,7 @@ export const CatalogProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     fetchProducts();
   }, [dataLoaded]);
 

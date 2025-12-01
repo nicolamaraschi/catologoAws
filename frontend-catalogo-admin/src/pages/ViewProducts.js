@@ -1,39 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Card, Table, Form, Button, Row, Col, Alert, Spinner, Badge } from 'react-bootstrap';
+import { Container, Card, Table, Form, Button, Row, Col, Alert, Spinner, Badge, Modal } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import { getAllProdotti, getAllCategories, deleteProdotto } from '../api';
 
 const ViewProducts = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Stati per i filtri
   const [filterText, setFilterText] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
+
+  // Stati per il modale di conferma eliminazione
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         setLoading(true);
         setError('');
-        
+
         console.log('🔍 Loading products and categories...');
-        
+
         // Carica prodotti e categorie in parallelo
         const [productsData, categoriesData] = await Promise.all([
           getAllProdotti(),
           getAllCategories()
         ]);
-        
+
         console.log('📦 Products loaded:', productsData);
         console.log('📋 Categories loaded:', categoriesData);
-        
+
         setProducts(productsData || []);
         setCategories(categoriesData || []);
-        
+
         setLoading(false);
       } catch (err) {
         console.error("❌ Error loading data:", err);
@@ -44,16 +49,28 @@ const ViewProducts = () => {
     loadData();
   }, []);
 
-  // Gestore per la cancellazione
-  const handleDelete = async (productId, productName) => {
-    if (window.confirm(`Sei sicuro di voler eliminare il prodotto: ${productName}?`)) {
-      try {
-        await deleteProdotto(productId);
-        // Rimuovi il prodotto dallo stato per aggiornare la UI
-        setProducts(products.filter(p => p.productId !== productId));
-      } catch (err) {
-        setError("Errore durante l'eliminazione: " + err.message);
-      }
+  // Apre il modale di conferma
+  const confirmDelete = (product) => {
+    setProductToDelete(product);
+    setShowDeleteModal(true);
+  };
+
+  // Esegue la cancellazione
+  const handleDelete = async () => {
+    if (!productToDelete) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteProdotto(productToDelete.productId);
+      // Rimuovi il prodotto dallo stato per aggiornare la UI
+      setProducts(products.filter(p => p.productId !== productToDelete.productId));
+      setShowDeleteModal(false);
+      setProductToDelete(null);
+    } catch (err) {
+      setError("Errore durante l'eliminazione: " + err.message);
+      setShowDeleteModal(false); // Chiudi comunque il modale in caso di errore
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -95,9 +112,9 @@ const ViewProducts = () => {
             key={index}
             src={imageUrl}
             alt={`${product.nome?.it} - ${index + 1}`}
-            style={{ 
-              width: '40px', 
-              height: '40px', 
+            style={{
+              width: '40px',
+              height: '40px',
               objectFit: 'cover',
               borderRadius: '4px',
               border: '1px solid #dee2e6'
@@ -122,13 +139,13 @@ const ViewProducts = () => {
         </Card.Header>
         <Card.Body>
           {error && <Alert variant="danger">{error}</Alert>}
-          
+
           {/* Filtri aggiornati */}
           <Row className="mb-3">
             <Col md={6}>
               <Form.Group>
                 <Form.Label>Filtra per nome</Form.Label>
-                <Form.Control 
+                <Form.Control
                   type="text"
                   placeholder="Cerca prodotto..."
                   value={filterText}
@@ -186,7 +203,7 @@ const ViewProducts = () => {
                       <td>
                         <ProductImages product={product} />
                       </td>
-                      
+
                       <td>{product.nome?.it || product.productId}</td>
                       <td>{product.codice}</td>
                       <td>{product.categoria?.it || 'N/D'}</td>
@@ -196,10 +213,10 @@ const ViewProducts = () => {
                         <Link to={`/edit-product/${product.productId}`} className="btn btn-primary btn-sm me-2">
                           Modifica
                         </Link>
-                        <Button 
-                          variant="danger" 
+                        <Button
+                          variant="danger"
                           size="sm"
-                          onClick={() => handleDelete(product.productId, product.nome?.it)}
+                          onClick={() => confirmDelete(product)}
                         >
                           Elimina
                         </Button>
@@ -212,6 +229,26 @@ const ViewProducts = () => {
           )}
         </Card.Body>
       </Card>
+
+      {/* Modale di conferma eliminazione */}
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Conferma Eliminazione</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Sei sicuro di voler eliminare il prodotto <strong>{productToDelete?.nome?.it || productToDelete?.productId}</strong>?
+          <br />
+          <span className="text-danger small">Questa azione non può essere annullata.</span>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)} disabled={isDeleting}>
+            Annulla
+          </Button>
+          <Button variant="danger" onClick={handleDelete} disabled={isDeleting}>
+            {isDeleting ? 'Eliminazione...' : 'Elimina'}
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </Container>
   );
 };

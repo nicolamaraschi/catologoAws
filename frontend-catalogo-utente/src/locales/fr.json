@@ -85,5 +85,15 @@
   "eco_friendly": "Éco-responsable",
   "eco_friendly_description": "Produits respectueux de l'environnement et des personnes",
   "domestic": "Domestique",
-  "industrial": "Industriel"
+  "profession": "Professionnel",
+  "industrial": "Industriel",
+  "search_products": "Rechercher des produits...",
+  "clear_search": "Effacer la recherche",
+  "sort_by": "Trier par",
+  "name_asc": "Nom (A-Z)",
+  "name_desc": "Nom (Z-A)",
+  "price_asc": "Prix (Croissant)",
+  "price_desc": "Prix (Décroissant)",
+  "product": "produit",
+  "products": "produits"
 }
