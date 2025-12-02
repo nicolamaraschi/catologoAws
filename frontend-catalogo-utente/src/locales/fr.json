@@ -22,8 +22,8 @@
   "hide_subcategories": "Masquer les sous-catégories",
   "show_subcategories": "Afficher les sous-catégories",
   "pages": "Pages",
-  "eg_store": "EG Store",
-  "footer_about_us": "Nous offrons des produits de haute qualité pour l'hygiène et le nettoyage, en mettant l'accent sur la durabilité et l'efficacité.",
+  "eg_store": "Orsi S.R.L.",
+  "footer_about_us": "Orsi est une entreprise présente depuis 1907. Produits détergents domestiques et professionnels.",
   "useful_links": "Liens utiles",
   "catalog_products": "Catalogue de produits",
   "privacy_policy": "Politique de confidentialité",
@@ -81,7 +81,7 @@
   "fast_delivery": "Livraison Rapide",
   "fast_delivery_description": "Nous livrons dans toute l'Italie rapidement",
   "technical_support": "Support Technique",
-  "technical_support_description": "Nos experts sont toujours disponibles pour vous conseiller",
+  "technical_support_description": "Support technique en cas de problème",
   "eco_friendly": "Éco-responsable",
   "eco_friendly_description": "Produits respectueux de l'environnement et des personnes",
   "domestic": "Domestique",
@@ -95,5 +95,11 @@
   "price_asc": "Prix (Croissant)",
   "price_desc": "Prix (Décroissant)",
   "product": "produit",
-  "products": "produits"
+  "products": "produits",
+  "view_on_map": "Voir sur Google Maps",
+  "need_help": "Besoin d'aide ?",
+  "contact_us_email": "Écrivez-nous pour toute information :",
+  "view_details": "Voir Détails",
+  "unlimited_duration": "Durée Illimitée",
+  "unlimited_duration_description": "Formule en poudre super concentrée : pas de gaspillage d'eau, pas d'eau transportée."
 }

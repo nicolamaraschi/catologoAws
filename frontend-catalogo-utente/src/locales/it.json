@@ -22,8 +22,8 @@
   "hide_subcategories": "Nascondi sottocategorie",
   "show_subcategories": "Mostra sottocategorie",
   "pages": "Pagine",
-  "eg_store": "EG Store",
-  "footer_about_us": "Offriamo prodotti di alta qualità per l'igiene e la pulizia, con un'attenzione particolare alla sostenibilità e all'efficacia.",
+  "eg_store": "Orsi S.R.L.",
+  "footer_about_us": "Orsi è un'azienda presente dal 1907. Prodotti detergenti domestici e professionali.",
   "useful_links": "Link Utili",
   "catalog_products": "Catalogo Prodotti",
   "privacy_policy": "Privacy Policy",
@@ -81,7 +81,7 @@
   "fast_delivery": "Consegna Veloce",
   "fast_delivery_description": "Consegniamo in tutta Italia in tempi rapidi",
   "technical_support": "Supporto Tecnico",
-  "technical_support_description": "I nostri esperti sono sempre disponibili per consigliarti",
+  "technical_support_description": "Supporto tecnico qualora aveste problemi",
   "eco_friendly": "Eco-Sostenibile",
   "eco_friendly_description": "Prodotti rispettosi dell'ambiente e delle persone",
   "domestic": "Domestico",
@@ -95,5 +95,11 @@
   "price_asc": "Prezzo (Crescente)",
   "price_desc": "Prezzo (Decrescente)",
   "product": "prodotto",
-  "products": "prodotti"
+  "products": "prodotti",
+  "view_on_map": "Vedi su Google Maps",
+  "need_help": "Serve Aiuto?",
+  "contact_us_email": "Scrivici per qualsiasi informazione:",
+  "view_details": "Vedi Dettagli",
+  "unlimited_duration": "Durata Illimitata",
+  "unlimited_duration_description": "Formula in polvere super concentrata: zero spreco di acqua, zero acqua trasportata."
 }

@@ -22,8 +22,8 @@
   "hide_subcategories": "Ocultar subcategorías",
   "show_subcategories": "Mostrar subcategorías",
   "pages": "Páginas",
-  "eg_store": "EG Store",
-  "footer_about_us": "Ofrecemos productos de alta calidad para la higiene y la limpieza, con un enfoque en la sostenibilidad y la eficacia.",
+  "eg_store": "Orsi S.R.L.",
+  "footer_about_us": "Orsi es una empresa presente desde 1907. Productos detergentes domésticos y profesionales.",
   "useful_links": "Enlaces útiles",
   "catalog_products": "Catálogo de productos",
   "privacy_policy": "Política de privacidad",
@@ -81,7 +81,7 @@
   "fast_delivery": "Entrega Rápida",
   "fast_delivery_description": "Entregamos en toda Italia rápidamente",
   "technical_support": "Soporte Técnico",
-  "technical_support_description": "Nuestros expertos están siempre disponibles para asesorarte",
+  "technical_support_description": "Soporte técnico en caso de problemas",
   "eco_friendly": "Ecológico",
   "eco_friendly_description": "Productos que respetan el medio ambiente y a las personas",
   "domestic": "Doméstico",
@@ -95,5 +95,11 @@
   "price_asc": "Precio (Ascendente)",
   "price_desc": "Precio (Descendente)",
   "product": "producto",
-  "products": "productos"
+  "products": "productos",
+  "view_on_map": "Ver en Google Maps",
+  "need_help": "¿Necesitas ayuda?",
+  "contact_us_email": "Escríbenos para cualquier información:",
+  "view_details": "Ver Detalles",
+  "unlimited_duration": "Duración Ilimitada",
+  "unlimited_duration_description": "Fórmula en polvo superconcentrada: sin desperdicio de agua, sin agua transportada."
 }

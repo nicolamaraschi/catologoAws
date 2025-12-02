@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ProductCard from '../components/products/ProductCard';
 import { FaHome, FaIndustry } from 'react-icons/fa';
-import { MdVerified, MdLocalShipping, MdSupportAgent, MdEco } from 'react-icons/md';
+import { MdVerified, MdEco, MdHourglassEmpty, MdSupportAgent } from 'react-icons/md';
 import { useLanguage } from '../context/LanguageContext';
 import productService from '../services/productService';
 import categoryService from '../services/categoryService';
@@ -58,7 +58,6 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
-      {/* Hero section */}
       {/* Hero section */}
       <section className="hero-section">
         <video className="hero-bg-video" autoPlay loop muted playsInline>
@@ -172,10 +171,10 @@ const HomePage = () => {
 
             <div className="benefit-card">
               <div className="benefit-icon">
-                <MdLocalShipping size={40} color="#3f51b5" />
+                <MdHourglassEmpty size={40} color="#3f51b5" />
               </div>
-              <h3>{t('fast_delivery')}</h3>
-              <p>{t('fast_delivery_description')}</p>
+              <h3>{t('unlimited_duration')}</h3>
+              <p>{t('unlimited_duration_description')}</p>
             </div>
 
             <div className="benefit-card">

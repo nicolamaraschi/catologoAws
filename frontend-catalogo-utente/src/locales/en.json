@@ -22,8 +22,8 @@
   "hide_subcategories": "Hide subcategories",
   "show_subcategories": "Show subcategories",
   "pages": "Pages",
-  "eg_store": "EG Store",
-  "footer_about_us": "We offer high-quality products for hygiene and cleaning, with a focus on sustainability and effectiveness.",
+  "eg_store": "Orsi S.R.L.",
+  "footer_about_us": "Orsi is a company established in 1907. Domestic and professional detergent products.",
   "useful_links": "Useful Links",
   "catalog_products": "Product Catalog",
   "privacy_policy": "Privacy Policy",
@@ -81,7 +81,7 @@
   "fast_delivery": "Fast Delivery",
   "fast_delivery_description": "We deliver throughout Italy quickly",
   "technical_support": "Technical Support",
-  "technical_support_description": "Our experts are always available to advise you",
+  "technical_support_description": "Technical support in case you have problems",
   "eco_friendly": "Eco-Friendly",
   "eco_friendly_description": "Products that respect the environment and people",
   "domestic": "Domestic",
@@ -95,5 +95,11 @@
   "price_asc": "Price (Low to High)",
   "price_desc": "Price (High to Low)",
   "product": "product",
-  "products": "products"
+  "products": "products",
+  "view_on_map": "View on Google Maps",
+  "need_help": "Need Help?",
+  "contact_us_email": "Write to us for any information:",
+  "view_details": "View Details",
+  "unlimited_duration": "Unlimited Shelf Life",
+  "unlimited_duration_description": "Super concentrated powder formula: no water waste, no transported water."
 }

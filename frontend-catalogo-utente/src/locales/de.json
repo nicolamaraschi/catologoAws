@@ -22,8 +22,8 @@
   "hide_subcategories": "Unterkategorien ausblenden",
   "show_subcategories": "Unterkategorien anzeigen",
   "pages": "Seiten",
-  "eg_store": "EG Store",
-  "footer_about_us": "Wir bieten hochwertige Produkte für Hygiene und Reinigung, mit Fokus auf Nachhaltigkeit und Effektivität.",
+  "eg_store": "Orsi S.R.L.",
+  "footer_about_us": "Orsi ist ein seit 1907 bestehendes Unternehmen. Reinigungs- und Waschmittel für Haushalt und Gewerbe.",
   "useful_links": "Nützliche Links",
   "catalog_products": "Produktkatalog",
   "privacy_policy": "Datenschutzbestimmungen",
@@ -81,7 +81,7 @@
   "fast_delivery": "Schnelle Lieferung",
   "fast_delivery_description": "Wir liefern schnell in ganz Italien",
   "technical_support": "Technischer Support",
-  "technical_support_description": "Unsere Experten stehen Ihnen jederzeit zur Verfügung",
+  "technical_support_description": "Technischer Support bei Problemen",
   "eco_friendly": "Umweltfreundlich",
   "eco_friendly_description": "Produkte, die die Umwelt und die Menschen respektieren",
   "domestic": "Haushalt",
@@ -95,5 +95,11 @@
   "price_asc": "Preis (Aufsteigend)",
   "price_desc": "Preis (Absteigend)",
   "product": "Produkt",
-  "products": "Produkte"
+  "products": "Produkte",
+  "view_on_map": "Auf Google Maps ansehen",
+  "need_help": "Brauchen Sie Hilfe?",
+  "contact_us_email": "Schreiben Sie uns für weitere Informationen:",
+  "view_details": "Details anzeigen",
+  "unlimited_duration": "Unbegrenzte Haltbarkeit",
+  "unlimited_duration_description": "Superkonzentrierte Pulverformel: keine Wasserverschwendung, kein transportiertes Wasser."
 }

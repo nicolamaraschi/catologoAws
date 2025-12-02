@@ -62,28 +62,28 @@ const ProductCard = ({ product }) => {
 
   return (
     <div className="product-card">
-      <div className="product-image">
-        <img src={mainImage} alt={productName} />
-        <div className="product-overlay">
-          <Link to={`/prodotto/${productId}`} className="view-product">
-            {t('view')}
-          </Link>
+      <Link to={`/prodotto/${productId}`} className="product-card-link">
+        <div className="product-image">
+          <img src={mainImage} alt={productName} />
         </div>
-      </div>
-      <div className="product-info">
-        <div className="product-category-tag">{productCategory}</div>
-        {productSubcategory && (
-          <div className="product-subcategory-tag">{productSubcategory}</div>
-        )}
-        <h3 className="product-title">{productName}</h3>
-        {codice && <div className="product-code">{t('code_short')} {codice}</div>}
-        <p className="product-type">{productType}</p>
-        {tipoImballaggio && <p className="product-packaging">{tipoImballaggio}</p>}
-        <div className="product-price">
-          <span className="price">{formattedPrice} €</span>
-          <span className="unit">{unita || t('unit_pz')}</span>
+        <div className="product-info">
+          <div className="product-category-tag">{productCategory}</div>
+          {productSubcategory && (
+            <div className="product-subcategory-tag">{productSubcategory}</div>
+          )}
+          <h3 className="product-title">{productName}</h3>
+          {codice && <div className="product-code">{t('code_short')} {codice}</div>}
+          <p className="product-type">{productType}</p>
+          {tipoImballaggio && <p className="product-packaging">{tipoImballaggio}</p>}
+          <div className="product-price">
+            <span className="price">{formattedPrice} €</span>
+            <span className="unit">{unita || t('unit_pz')}</span>
+          </div>
+          <div className="product-actions">
+            <span className="view-details-btn">{t('view_details')}</span>
+          </div>
         </div>
-      </div>
+      </Link>
     </div>
   );
 };

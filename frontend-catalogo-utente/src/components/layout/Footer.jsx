@@ -17,9 +17,9 @@ const Footer = () => {
               {t('footer_about_us')}
             </p>
             <div className="contact">
-              <p><i className="icon-phone"></i> +39 123 456 7890</p>
-              <p><i className="icon-envelope"></i> info@egstore.it</p>
-              <p><i className="icon-map-marker"></i> Via Roma 123, Milano</p>
+              <p><i className="icon-phone"></i> +39 051 6671000</p>
+              <p><i className="icon-envelope"></i> info@orsidetersivi.com</p>
+              <p><i className="icon-map-marker"></i> Via C. Bassi 22, 40015 Galliera (BO)</p>
             </div>
           </div>
 
@@ -33,13 +33,12 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div className="footer-section newsletter">
-            <h3>{t('newsletter')}</h3>
-            <p>{t('newsletter_description')}</p>
-            <form className="newsletter-form">
-              <input type="email" placeholder={t('your_email')} required />
-              <button type="submit" className="btn-primary">{t('subscribe')}</button>
-            </form>
+          <div className="footer-section help">
+            <h3>{t('need_help') || 'Serve Aiuto?'}</h3>
+            <p>{t('contact_us_email') || 'Scrivici per qualsiasi informazione:'}</p>
+            <a href="mailto:info@orsidetersivi.com" className="help-email">
+              info@orsidetersivi.com
+            </a>
           </div>
         </div>
 
