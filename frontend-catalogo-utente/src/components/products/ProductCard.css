@@ -9,50 +9,13 @@
   padding: var(--space-6) 0 var(--space-12);
 }
 
-.container {
-  width: 100%;
-  max-width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: var(--space-4);
-  padding-right: var(--space-4);
-  box-sizing: border-box;
-  /* IMPORTANTE: include padding nella larghezza */
-}
-
-/* Layout principale catalogo */
-.catalog-layout {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-8);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-}
-
-/* Sidebar fix */
-.catalog-sidebar {
-  width: 100%;
-  max-width: 100%;
-  flex-shrink: 0;
-}
-
-/* Content area fix */
-.catalog-content {
-  width: 100%;
-  max-width: 100%;
-  min-width: 0;
-  /* IMPORTANTE: permette al flex item di ridursi */
-  flex: 1;
-  overflow: hidden;
-  /* Impedisce overflow del contenuto */
-}
+/* Removed old global layout rules to prevent overriding CatalogPage.css */
 
 /* Product list grid fix */
 .product-list {
   display: grid;
   gap: var(--space-6);
-  grid-template-columns: repeat(1, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -70,96 +33,8 @@
 /* === RESPONSIVE FIXES === */
 
 /* Mobile (fino a 640px) */
-@media (max-width: 640px) {
-  .container {
-    padding-left: var(--space-3);
-    padding-right: var(--space-3);
-  }
-
-  .catalog-layout {
-    gap: var(--space-4);
-  }
-
-  .product-list {
-    grid-template-columns: 1fr;
-    /* Sempre una colonna su mobile */
-    gap: var(--space-4);
-  }
-}
-
-/* Small devices (640px+) */
-@media (min-width: 640px) {
-  .container {
-    max-width: var(--container-sm);
-    padding-left: var(--space-6);
-    padding-right: var(--space-6);
-  }
-
-  .product-list {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-5);
-  }
-}
-
-/* Medium devices (768px+) */
-@media (min-width: 768px) {
-  .container {
-    max-width: var(--container-md);
-  }
-
-  .catalog-layout {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: var(--space-8);
-  }
-
-  .catalog-sidebar {
-    width: 18rem;
-    /* Larghezza fissa per sidebar */
-    flex-shrink: 0;
-  }
-
-  .catalog-content {
-    flex: 1;
-    min-width: 0;
-    /* CRITICO: permette al contenuto di ridursi */
-  }
-
-  .product-list {
-    grid-template-columns: repeat(2, 1fr);
-    gap: var(--space-6);
-  }
-}
-
-/* Large devices (1024px+) */
-@media (min-width: 1024px) {
-  .container {
-    max-width: var(--container-lg);
-  }
-
-  .catalog-sidebar {
-    width: 20rem;
-  }
-
-  .product-list {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-/* Extra large devices (1280px+) */
-@media (min-width: 1280px) {
-  .container {
-    max-width: var(--container-xl);
-  }
-
-  .catalog-sidebar {
-    width: 22rem;
-  }
-
-  .product-list {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
+/* Removed old media queries for containers and sidebars. 
+   Grid columns for .product-list are handled by CatalogPage.css now. */
 
 /* === FIX AGGIUNTIVI === */
 
@@ -252,24 +127,10 @@ body {
 .product-type {
   word-wrap: break-word;
   overflow-wrap: break-word;
-  hyphens: auto;
+  hyphens: none;
 }
 
-/* === FIX DEFINITIVO CONTAINER === */
-@media (min-width: 768px) {
-  .catalog-layout {
-    /* Usa calc per garantire che la larghezza sia sempre corretta */
-    width: calc(100% - 2rem);
-    /* Sottrae il padding del container */
-    margin: 0 auto;
-  }
-
-  .catalog-content {
-    /* Larghezza massima del content per evitare overflow */
-    max-width: calc(100vw - 18rem - 4rem - 2rem);
-    /* viewport - sidebar - gaps - padding */
-  }
-}
+/* RIMOSSO VECCHIO FIX DEFINITIVO CONTAINER poiché centralizzato in CatalogPage.css */
 
 /* === PRODUCT CARD STYLES === */
 
@@ -348,12 +209,8 @@ body {
   color: var(--gray-900);
   margin-bottom: var(--space-2);
   line-height: 1.4;
-  /* Limit to 2 lines */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  /* Allow full text to show */
+  display: block;
 }
 
 .product-code {

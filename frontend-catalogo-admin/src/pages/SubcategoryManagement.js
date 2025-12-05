@@ -13,6 +13,7 @@ import {
   deleteCategory
 } from '../api';
 import './Dashboard.css';
+import { translateText } from '../utils/openai';
 
 const SubcategoryManagement = () => {
   // Stati per i dati
@@ -46,6 +47,7 @@ const SubcategoryManagement = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // --- GESTIONE CATEGORIE ---
 
@@ -274,6 +276,32 @@ const SubcategoryManagement = () => {
     }
   };
 
+  // --- AI TRANSLATION HANDLER ---
+  const handleAiTranslate = async (sourceText, setTargetState) => {
+    if (!sourceText) {
+      setError('Inserisci il testo in italiano per tradurre.');
+      return;
+    }
+
+    setIsTranslating(true);
+    setError('');
+
+    try {
+      const translations = await translateText(sourceText);
+      setTargetState(prev => ({
+        ...prev,
+        ...translations
+      }));
+      setSuccess('Traduzioni generate con successo!');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (error) {
+      console.error(error);
+      setError('Errore durante la traduzione automatica.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   // Helper per input traduzioni
   const renderTranslationInputs = (values, setValues) => (
     <>
@@ -445,7 +473,18 @@ const SubcategoryManagement = () => {
               />
             </Form.Group>
             <hr />
-            <h6>Traduzioni</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="mb-0">Traduzioni</h6>
+              <Button
+                variant="info"
+                size="sm"
+                className="text-white"
+                onClick={() => handleAiTranslate(newCategoryTranslations.it, setNewCategoryTranslations)}
+                disabled={isTranslating || !newCategoryTranslations.it}
+              >
+                {isTranslating ? '...' : '✨ Traduci'}
+              </Button>
+            </div>
             {renderTranslationInputs(newCategoryTranslations, setNewCategoryTranslations)}
           </Modal.Body>
           <Modal.Footer>
@@ -460,7 +499,18 @@ const SubcategoryManagement = () => {
             <Modal.Title>Modifica Categoria</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <h6>Traduzioni</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="mb-0">Traduzioni</h6>
+              <Button
+                variant="info"
+                size="sm"
+                className="text-white"
+                onClick={() => handleAiTranslate(editCategoryTranslations.it, setEditCategoryTranslations)}
+                disabled={isTranslating || !editCategoryTranslations.it}
+              >
+                {isTranslating ? '...' : '✨ Traduci'}
+              </Button>
+            </div>
             {renderTranslationInputs(editCategoryTranslations, setEditCategoryTranslations)}
           </Modal.Body>
           <Modal.Footer>
@@ -504,7 +554,18 @@ const SubcategoryManagement = () => {
               />
             </Form.Group>
             <hr />
-            <h6>Traduzioni</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="mb-0">Traduzioni</h6>
+              <Button
+                variant="info"
+                size="sm"
+                className="text-white"
+                onClick={() => handleAiTranslate(newSubcategoryTranslations.it, setNewSubcategoryTranslations)}
+                disabled={isTranslating || !newSubcategoryTranslations.it}
+              >
+                {isTranslating ? '...' : '✨ Traduci'}
+              </Button>
+            </div>
             {renderTranslationInputs(newSubcategoryTranslations, setNewSubcategoryTranslations)}
           </Modal.Body>
           <Modal.Footer>
@@ -519,7 +580,18 @@ const SubcategoryManagement = () => {
             <Modal.Title>Modifica Sottocategoria</Modal.Title>
           </Modal.Header>
           <Modal.Body>
-            <h6>Traduzioni</h6>
+            <div className="d-flex justify-content-between align-items-center mb-2">
+              <h6 className="mb-0">Traduzioni</h6>
+              <Button
+                variant="info"
+                size="sm"
+                className="text-white"
+                onClick={() => handleAiTranslate(editSubcategoryTranslations.it, setEditSubcategoryTranslations)}
+                disabled={isTranslating || !editSubcategoryTranslations.it}
+              >
+                {isTranslating ? '...' : '✨ Traduci'}
+              </Button>
+            </div>
             {renderTranslationInputs(editSubcategoryTranslations, setEditSubcategoryTranslations)}
           </Modal.Body>
           <Modal.Footer>

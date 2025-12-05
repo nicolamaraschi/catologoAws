@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 // 1. Importa l'Authenticator di Amplify
 import { Authenticator } from '@aws-amplify/ui-react';
+import '@aws-amplify/ui-react/styles.css'; // Ensure default styles are imported if not already
+import './AmplifyTheme.css'; // Import custom theme overrides
 
 // Importa i tuoi componenti
 import Navbar from './components/Navbar';
@@ -16,12 +18,12 @@ import SubcategoryManagement from './pages/SubcategoryManagement';
 function App() {
   return (
     // 3. Avvolgi l'intera applicazione nell'Authenticator
-    <Authenticator loginMechanisms={['email']}> 
+    <Authenticator loginMechanisms={['email']} hideSignUp={true}>
       {({ signOut, user }) => (
         <BrowserRouter>
           {/* 4. Passa 'user' e 'signOut' alla Navbar */}
           <Navbar user={user} signOut={signOut} />
-          
+
           <Routes>
             {/* Le tue rotte ora sono automaticamente protette */}
             <Route path="/home" element={<Home />} />
@@ -29,10 +31,10 @@ function App() {
             <Route path="/edit-product/:productId" element={<EditProduct />} />
             <Route path="/view-products" element={<ViewProducts />} />
             <Route path="/subcategories" element={<SubcategoryManagement />} />
-            
+
             {/* Reindirizza alla home se loggato */}
             <Route path="/" element={<Navigate to="/home" replace />} />
-            
+
             {/* Fallback per rotte non trovate */}
             <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>

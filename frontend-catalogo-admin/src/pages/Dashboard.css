@@ -232,3 +232,43 @@
     border-top: 1px solid #f3f4f6;
     padding: 1.5rem;
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .dashboard-container .glass-card {
+        padding: 1.5rem;
+        height: auto !important;
+        /* Reset height on mobile to prevent overflow */
+    }
+
+    .category-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .category-list-item .d-flex.gap-1 {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 0.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+        padding-top: 0.5rem;
+    }
+
+    .subcategory-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .action-btn-group {
+        width: 100%;
+        justify-content: flex-end;
+        opacity: 1;
+        /* Always visible on mobile since hover doesn't exist */
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+}

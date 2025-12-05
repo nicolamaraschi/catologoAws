@@ -1,0 +1,133 @@
+/* src/AmplifyTheme.css */
+
+/* 
+   FORCE OVERRIDES with high specificity and !important 
+   to beat Amplify's default styles 
+*/
+
+/* 1. Page Background (Container) */
+#root [data-amplify-authenticator] {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    min-height: 100vh !important;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%) !important;
+    background-image:
+        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.2) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.2) 0px, transparent 50%) !important;
+}
+
+/* 2. The Login Card (Router) */
+#root [data-amplify-authenticator] [data-amplify-router] {
+    background-color: rgba(30, 30, 30, 0.65) !important;
+    /* Dark semi-transparent */
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 24px !important;
+    padding: 2.5rem !important;
+    color: white !important;
+    width: 100%;
+    max-width: 450px;
+}
+
+/* 3. Tabs (Sign In / Create Account) */
+#root [data-amplify-authenticator] .amplify-tabs {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: transparent !important;
+    margin-bottom: 2rem !important;
+}
+
+#root [data-amplify-authenticator] .amplify-tabs__item {
+    color: #9ca3af !important;
+    /* Gray text inactive */
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+
+#root [data-amplify-authenticator] .amplify-tabs__item:hover {
+    color: white !important;
+}
+
+#root [data-amplify-authenticator] .amplify-tabs__item[data-state="active"] {
+    color: #3b82f6 !important;
+    /* Blue active */
+    border-bottom-color: #3b82f6 !important;
+    background: transparent !important;
+}
+
+/* 4. Input Fields */
+#root [data-amplify-authenticator] .amplify-input {
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    padding: 0.75rem 1rem !important;
+}
+
+#root [data-amplify-authenticator] .amplify-input:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+    background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+#root [data-amplify-authenticator] .amplify-input::placeholder {
+    color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Labels */
+#root [data-amplify-authenticator] .amplify-label {
+    color: #e5e7eb !important;
+    margin-bottom: 0.5rem !important;
+    font-size: 0.95rem !important;
+}
+
+/* 5. Primary Button (Sign In) */
+#root [data-amplify-authenticator] .amplify-button--primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 0.8rem !important;
+    font-weight: 600 !important;
+    margin-top: 1.5rem !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+#root [data-amplify-authenticator] .amplify-button--primary:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4) !important;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%) !important;
+}
+
+/* 6. Secondary Links (Forgot Password) */
+#root [data-amplify-authenticator] .amplify-button--link {
+    color: #9ca3af !important;
+    font-size: 0.9rem !important;
+    margin-top: 1rem !important;
+}
+
+#root [data-amplify-authenticator] .amplify-button--link:hover {
+    color: #3b82f6 !important;
+    text-decoration: none !important;
+    background: transparent !important;
+}
+
+/* 7. Headings & Text */
+#root [data-amplify-authenticator] .amplify-heading {
+    color: white !important;
+}
+
+#root [data-amplify-authenticator] .amplify-text {
+    color: #d1d5db !important;
+}
+
+/* Hide the default footer branding if present */
+#root [data-amplify-authenticator] [data-amplify-footer] {
+    display: none !important;
+}

@@ -5,6 +5,7 @@ import './Navbar.css';
 
 const AppNavbar = ({ user, signOut }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileSubmenuOpen, setMobileSubmenuOpen] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
 
@@ -20,16 +21,33 @@ const AppNavbar = ({ user, signOut }) => {
   // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false);
+    setMobileSubmenuOpen(null);
   }, [location]);
 
+  const toggleMobileSubmenu = (menuName) => {
+    if (window.innerWidth <= 992) {
+      setMobileSubmenuOpen(mobileSubmenuOpen === menuName ? null : menuName);
+    }
+  };
+
   const getUserEmail = () => {
-    if (user?.attributes?.email) return user.attributes.email;
-    if (user?.username) return user.username;
-    return null;
+    // Try to get email from various possible locations in the Cognito user object
+    if (user?.signInUserSession?.idToken?.payload?.email) {
+      return user.signInUserSession.idToken.payload.email;
+    }
+    if (user?.attributes?.email) {
+      return user.attributes.email;
+    }
+    // If username looks like an email, use it
+    if (user?.username && user.username.includes('@')) {
+      return user.username;
+    }
+    // Fallback if no email found - do NOT return UUID/username if it's not an email
+    return 'Admin';
   };
 
   const userEmail = getUserEmail();
-  const userRole = user?.signInUserSession?.accessToken?.payload["cognito:groups"]?.join(', ') || 'Admin';
+  const userRole = user?.signInUserSession?.accessToken?.payload?.["cognito:groups"]?.join(', ') || 'Admin';
 
   return (
     <nav className={`custom-navbar ${scrolled ? 'scrolled' : ''}`}>
@@ -54,13 +72,24 @@ const AppNavbar = ({ user, signOut }) => {
           </NavLink>
         </li>
 
-        <li className="menu-item">
-          <div className="menu-link" style={{ cursor: 'pointer' }}>
+        <li className={`menu-item ${mobileSubmenuOpen === 'products' ? 'active' : ''}`}>
+          <div
+            className="menu-link"
+            style={{ cursor: 'pointer' }}
+            onClick={() => toggleMobileSubmenu('products')}
+          >
             <FiBox size={18} />
             Prodotti
-            <FiChevronDown size={14} style={{ marginLeft: 'auto' }} />
+            <FiChevronDown
+              size={14}
+              style={{
+                marginLeft: 'auto',
+                transform: mobileSubmenuOpen === 'products' ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s'
+              }}
+            />
           </div>
-          <div className="submenu-container">
+          <div className={`submenu-container ${mobileSubmenuOpen === 'products' ? 'mobile-open' : ''}`}>
             <NavLink to="/view-products" className="submenu-item">
               Visualizza Prodotti
             </NavLink>
@@ -82,7 +111,10 @@ const AppNavbar = ({ user, signOut }) => {
         <li className="menu-item" style={{ marginLeft: 'auto' }}>
           {userEmail ? (
             <div className="menu-item">
-              <div className="user-profile">
+              <div
+                className="user-profile"
+                onClick={() => toggleMobileSubmenu('profile')}
+              >
                 <div className="user-avatar">
                   {userEmail.charAt(0).toUpperCase()}
                 </div>
@@ -90,10 +122,17 @@ const AppNavbar = ({ user, signOut }) => {
                   <span className="user-email">{userEmail.split('@')[0]}</span>
                   <span className="user-role">{userRole}</span>
                 </div>
-                <FiChevronDown size={14} color="#a0a0a0" />
+                <FiChevronDown
+                  size={14}
+                  color="#a0a0a0"
+                  style={{
+                    transform: mobileSubmenuOpen === 'profile' ? 'rotate(180deg)' : 'rotate(0deg)',
+                    transition: 'transform 0.2s'
+                  }}
+                />
               </div>
 
-              <div className="submenu-container">
+              <div className={`submenu-container ${mobileSubmenuOpen === 'profile' ? 'mobile-open' : ''}`}>
                 <div className="submenu-item" style={{ cursor: 'default', opacity: 0.7 }}>
                   <small>Signed in as</small><br />
                   <strong>{userEmail}</strong>

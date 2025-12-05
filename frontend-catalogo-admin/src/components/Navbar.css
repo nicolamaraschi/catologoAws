@@ -261,7 +261,8 @@
     /* Hidden by default on mobile unless expanded */
   }
 
-  .menu-item.active .submenu-container {
+  .menu-item.active .submenu-container,
+  .submenu-container.mobile-open {
     display: block;
   }
 
