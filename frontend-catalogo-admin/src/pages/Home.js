@@ -1,133 +1,95 @@
 // src/pages/Home.js
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Container, Row, Col, Card, Button } from 'react-bootstrap';
-import { FaPlus, FaList, FaEdit, FaTags } from 'react-icons/fa';
+import { Container, Row, Col } from 'react-bootstrap';
+import { FiPlus, FiList, FiEdit, FiGrid, FiArrowRight } from 'react-icons/fi';
+import './Dashboard.css';
 
 const Home = () => {
+  const cards = [
+    {
+      title: 'Aggiungi Prodotto',
+      description: 'Inserisci un nuovo prodotto nel catalogo con tutti i dettagli, immagini e specifiche tecniche.',
+      icon: <FiPlus />,
+      colorClass: 'icon-blue',
+      link: '/add-product',
+      btnText: 'Nuovo Prodotto'
+    },
+    {
+      title: 'Visualizza Prodotti',
+      description: 'Consulta l\'intero catalogo prodotti con filtri avanzati per categoria e stato.',
+      icon: <FiList />,
+      colorClass: 'icon-green',
+      link: '/view-products',
+      btnText: 'Vedi Catalogo'
+    },
+    {
+      title: 'Gestione Categorie',
+      description: 'Organizza la struttura del catalogo modificando categorie e sottocategorie.',
+      icon: <FiGrid />,
+      colorClass: 'icon-purple',
+      link: '/subcategories',
+      btnText: 'Gestisci Categorie'
+    },
+    {
+      title: 'Modifica Rapida',
+      description: 'Accedi rapidamente alla modifica dei prodotti esistenti per aggiornamenti veloci.',
+      icon: <FiEdit />,
+      colorClass: 'icon-orange',
+      link: '/view-products', // Redirecting to view products as edit is usually done from there or we can keep edit-product if it's a specific search page
+      btnText: 'Modifica'
+    }
+  ];
+
   return (
-    <Container className="mt-5">
-      <Row className="justify-content-center mb-5">
-        <Col md={10} className="text-center">
-          <h1 className="display-4 fw-bold">Gestione Catalogo Prodotti</h1>
-          <p className="lead text-muted">
-            Sistema di gestione completo per i prodotti delle categorie Domestico e Industriale
+    <div className="dashboard-container">
+      <Container>
+        <div className="page-header">
+          <h1 className="page-title">Gestione Catalogo</h1>
+          <p className="page-subtitle">
+            Pannello di controllo unificato per la gestione dei prodotti e della struttura del catalogo.
           </p>
-        </Col>
-      </Row>
+        </div>
 
-      <Row className="mb-5">
-        <Col md={3} className="mb-4">
-          <Card className="h-100 shadow-sm hover-card">
-            <Card.Body className="d-flex flex-column">
-              <div className="text-center mb-4">
-                <FaPlus className="text-primary" style={{ fontSize: '3rem' }} />
+        <Row className="g-4">
+          {cards.map((card, index) => (
+            <Col md={6} lg={3} key={index}>
+              <div className="glass-card">
+                <div className={`card-icon-wrapper ${card.colorClass}`}>
+                  {card.icon}
+                </div>
+                <h3 className="card-title">{card.title}</h3>
+                <p className="card-description">{card.description}</p>
+                <div className="card-action">
+                  <Link to={card.link} className="btn-custom btn-outline-custom w-100 justify-content-center">
+                    {card.btnText} <FiArrowRight />
+                  </Link>
+                </div>
               </div>
-              <Card.Title className="text-center">Aggiungi Prodotto</Card.Title>
-              <Card.Text className="text-muted">
-                Inserisci un nuovo prodotto nel catalogo con tutti i dettagli e le immagini.
-              </Card.Text>
-              <div className="mt-auto text-center">
-                <Button as={Link} to="/add-product" variant="outline-primary">
-                  Aggiungi Prodotto
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
+            </Col>
+          ))}
+        </Row>
 
-        <Col md={3} className="mb-4">
-          <Card className="h-100 shadow-sm hover-card">
-            <Card.Body className="d-flex flex-column">
-              <div className="text-center mb-4">
-                <FaList className="text-success" style={{ fontSize: '3rem' }} />
-              </div>
-              <Card.Title className="text-center">Visualizza Prodotti</Card.Title>
-              <Card.Text className="text-muted">
-                Consulta l'intero catalogo prodotti con possibilità di filtrare per categoria e sottocategoria.
-              </Card.Text>
-              <div className="mt-auto text-center">
-                <Button as={Link} to="/view-products" variant="outline-success">
-                  Visualizza Catalogo
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={3} className="mb-4">
-          <Card className="h-100 shadow-sm hover-card">
-            <Card.Body className="d-flex flex-column">
-              <div className="text-center mb-4">
-                <FaEdit className="text-warning" style={{ fontSize: '3rem' }} />
-              </div>
-              <Card.Title className="text-center">Modifica Prodotti</Card.Title>
-              <Card.Text className="text-muted">
-                Aggiorna le informazioni dei prodotti esistenti, cambia immagini e dettagli.
-              </Card.Text>
-              <div className="mt-auto text-center">
-                <Button as={Link} to="/edit-product" variant="outline-warning">
-                  Modifica Prodotti
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        <Col md={3} className="mb-4">
-          <Card className="h-100 shadow-sm hover-card">
-            <Card.Body className="d-flex flex-column">
-              <div className="text-center mb-4">
-                <FaTags className="text-info" style={{ fontSize: '3rem' }} />
-              </div>
-              <Card.Title className="text-center">Gestione Sottocategorie</Card.Title>
-              <Card.Text className="text-muted">
-                Aggiungi, modifica o elimina le sottocategorie per le categorie Domestico e Industriale.
-              </Card.Text>
-              <div className="mt-auto text-center">
-                <Button as={Link} to="/categories" variant="outline-info">
-                  Gestisci Sottocategorie
-                </Button>
-              </div>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row>
-        <Col className="text-center">
-          <Card className="bg-light">
-            <Card.Body>
-              <h2 className="h4 mb-3">Struttura del Catalogo</h2>
-              <Row>
-                <Col md={6} className="mb-3 mb-md-0">
-                  <div className="border rounded p-3">
-                    <h3 className="h5 text-primary">Domestico</h3>
-                    <p className="text-muted small">Prodotti per uso domestico e civile</p>
-                    <div className="d-flex justify-content-center">
-                      <Link to="/categories" className="btn btn-sm btn-outline-primary">
-                        Gestisci Sottocategorie
-                      </Link>
-                    </div>
-                  </div>
-                </Col>
-                <Col md={6}>
-                  <div className="border rounded p-3">
-                    <h3 className="h5 text-success">Industriale</h3>
-                    <p className="text-muted small">Prodotti per uso professionale e industriale</p>
-                    <div className="d-flex justify-content-center">
-                      <Link to="/categories" className="btn btn-sm btn-outline-success">
-                        Gestisci Sottocategorie
-                      </Link>
-                    </div>
-                  </div>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
-    </Container>
+        <div className="mt-5">
+          <div className="glass-card p-4">
+            <Row className="align-items-center">
+              <Col md={8}>
+                <h3 className="card-title mb-2">Struttura del Catalogo</h3>
+                <p className="text-secondary mb-0">
+                  Il catalogo è diviso in due macro-aree principali: <strong>Domestico</strong> e <strong>Industriale</strong>.
+                  Gestisci le sottocategorie per mantenere il catalogo organizzato.
+                </p>
+              </Col>
+              <Col md={4} className="text-md-end mt-3 mt-md-0">
+                <Link to="/subcategories" className="btn-custom btn-primary-custom">
+                  Gestisci Struttura <FiGrid />
+                </Link>
+              </Col>
+            </Row>
+          </div>
+        </div>
+      </Container>
+    </div>
   );
 };
 

@@ -1,78 +1,120 @@
-import React from 'react';
-import { LinkContainer } from 'react-router-bootstrap';
-import { Navbar, Nav, NavDropdown, Button } from 'react-bootstrap';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
+import { FiMenu, FiX, FiHome, FiBox, FiGrid, FiUser, FiLogOut, FiChevronDown } from 'react-icons/fi';
+import './Navbar.css';
 
 const AppNavbar = ({ user, signOut }) => {
-  // Funzione helper per ottenere l'email dell'utente
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location]);
+
   const getUserEmail = () => {
-    if (user?.attributes?.email) {
-      return user.attributes.email;
-    }
-    if (user?.username) {
-      return user.username;
-    }
+    if (user?.attributes?.email) return user.attributes.email;
+    if (user?.username) return user.username;
     return null;
   };
 
   const userEmail = getUserEmail();
+  const userRole = user?.signInUserSession?.accessToken?.payload["cognito:groups"]?.join(', ') || 'Admin';
 
   return (
-    <Navbar bg="dark" variant="dark" expand="lg" sticky="top">
-      <div className="container-fluid">
-        <LinkContainer to="/home">
-          <Navbar.Brand>Catalogo Admin</Navbar.Brand>
-        </LinkContainer>
-        <Navbar.Toggle aria-controls="basic-navbar-nav" />
-        <Navbar.Collapse id="basic-navbar-nav">
-          <Nav className="me-auto">
-            <LinkContainer to="/home">
-              <Nav.Link>Home</Nav.Link>
-            </LinkContainer>
-            
-            <NavDropdown title="Prodotti" id="prodotti-dropdown">
-              <LinkContainer to="/view-products">
-                <NavDropdown.Item>Visualizza Prodotti</NavDropdown.Item>
-              </LinkContainer>
-              <LinkContainer to="/add-product">
-                <NavDropdown.Item>Aggiungi Prodotto</NavDropdown.Item>
-              </LinkContainer>
-            </NavDropdown>
+    <nav className={`custom-navbar ${scrolled ? 'scrolled' : ''}`}>
+      <NavLink to="/home" className="brand-logo">
+        <FiBox size={24} color="#3b82f6" />
+        <span>Catalogo Admin</span>
+      </NavLink>
 
-            <LinkContainer to="/subcategories">
-              <Nav.Link>Gestione Categorie</Nav.Link>
-            </LinkContainer>
-          </Nav>
-          
-          <Nav>
-            {/* FIX: Controllo più robusto per l'utente */}
-            {userEmail ? (
-              <NavDropdown title={userEmail} id="user-dropdown" align="end">
-                <NavDropdown.Item disabled>
-                  Ruolo: {user?.signInUserSession?.accessToken?.payload["cognito:groups"]?.join(', ') || 'Admin'}
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item 
-                  onClick={() => {
-                    console.log('🚪 Logout clicked');
-                    signOut();
-                  }}
-                  className="text-danger"
-                  style={{ cursor: 'pointer' }}
+      <button
+        className="mobile-toggle"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-label="Toggle menu"
+      >
+        {isOpen ? <FiX /> : <FiMenu />}
+      </button>
+
+      <ul className={`nav-menu ${isOpen ? 'open' : ''}`}>
+        <li className="menu-item">
+          <NavLink to="/home" className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+            <FiHome size={18} />
+            Home
+          </NavLink>
+        </li>
+
+        <li className="menu-item">
+          <div className="menu-link" style={{ cursor: 'pointer' }}>
+            <FiBox size={18} />
+            Prodotti
+            <FiChevronDown size={14} style={{ marginLeft: 'auto' }} />
+          </div>
+          <div className="submenu-container">
+            <NavLink to="/view-products" className="submenu-item">
+              Visualizza Prodotti
+            </NavLink>
+            <div className="submenu-divider"></div>
+            <NavLink to="/add-product" className="submenu-item">
+              Aggiungi Prodotto
+            </NavLink>
+          </div>
+        </li>
+
+        <li className="menu-item">
+          <NavLink to="/subcategories" className={({ isActive }) => `menu-link ${isActive ? 'active' : ''}`}>
+            <FiGrid size={18} />
+            Gestione Categorie
+          </NavLink>
+        </li>
+
+        {/* User Profile Section */}
+        <li className="menu-item" style={{ marginLeft: 'auto' }}>
+          {userEmail ? (
+            <div className="menu-item">
+              <div className="user-profile">
+                <div className="user-avatar">
+                  {userEmail.charAt(0).toUpperCase()}
+                </div>
+                <div className="user-info">
+                  <span className="user-email">{userEmail.split('@')[0]}</span>
+                  <span className="user-role">{userRole}</span>
+                </div>
+                <FiChevronDown size={14} color="#a0a0a0" />
+              </div>
+
+              <div className="submenu-container">
+                <div className="submenu-item" style={{ cursor: 'default', opacity: 0.7 }}>
+                  <small>Signed in as</small><br />
+                  <strong>{userEmail}</strong>
+                </div>
+                <div className="submenu-divider"></div>
+                <div
+                  className="submenu-item text-danger"
+                  onClick={signOut}
+                  style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#ef4444' }}
                 >
+                  <FiLogOut size={16} />
                   Logout
-                </NavDropdown.Item>
-              </NavDropdown>
-            ) : user ? (
-              // Se user esiste ma non ha email, mostra caricamento
-              <Nav.Link disabled>Caricamento utente...</Nav.Link>
-            ) : (
-              // Se non c'è user, mostra che non è loggato
-              <Nav.Link disabled>Non autenticato</Nav.Link>
-            )}
-          </Nav>
-        </Navbar.Collapse>
-      </div>
-    </Navbar>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <span className="menu-link disabled">Caricamento...</span>
+          )}
+        </li>
+      </ul>
+    </nav>
   );
 };
 

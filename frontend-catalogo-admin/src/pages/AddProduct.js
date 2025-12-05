@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createProdotto, getSubcategoriesByCategory, getAllCategories } from '../api';
+import { translateText } from '../utils/openai';
 import { Form, Button, Container, Row, Col, Card, Alert } from 'react-bootstrap';
 
 const AddProduct = () => {
@@ -17,15 +18,16 @@ const AddProduct = () => {
     pezziPerEpal: '',
     descrizione: { it: '', en: '', fr: '', es: '', de: '' } // OGGETTO TRADUZIONI
   });
-  
+
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [immagini, setImmagini] = useState([]);
   const [previewImages, setPreviewImages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
-  
+
   const tipiProdotto = [
     'BULK',
     'BARATTOLO',
@@ -34,9 +36,9 @@ const AddProduct = () => {
     'ASTUCCIO PERSONALIZZATO',
     'MONODOSE CARTA'
   ];
-  
+
   const unitaMisura = ['€/KG', '€/PZ'];
-  
+
   const tipiImballaggio = [
     'Barattolo 1kg',
     'BigBag 600kg',
@@ -63,7 +65,7 @@ const AddProduct = () => {
     'Fustone 5.6kg',
     'Cartone 400tabs'
   ];
-  
+
   const packagingDefaults = {
     'Barattolo 1kg': { pezziPerCartone: 6, cartoniPerEpal: 40, pezziPerEpal: 240 },
     'BigBag 600kg': { pezziPerCartone: 1, cartoniPerEpal: 1, pezziPerEpal: 1 },
@@ -90,7 +92,7 @@ const AddProduct = () => {
     'Fustone 5.6kg': { pezziPerCartone: 1, cartoniPerEpal: 84, pezziPerEpal: 84 },
     'Cartone 400tabs': { pezziPerCartone: 1, cartoniPerEpal: 60, pezziPerEpal: 60 }
   };
-  
+
   // Carica le categorie all'avvio
   useEffect(() => {
     const fetchCategories = async () => {
@@ -106,7 +108,7 @@ const AddProduct = () => {
     };
     fetchCategories();
   }, []);
-  
+
   useEffect(() => {
     const fetchSubcategories = async () => {
       if (formData.categoria.it) { // CAMBIATO: controlla categoria.it
@@ -126,10 +128,10 @@ const AddProduct = () => {
         setSubcategories([]);
       }
     };
-    
+
     fetchSubcategories();
   }, [formData.categoria.it]); // CAMBIATO: dipende da categoria.it
-  
+
   useEffect(() => {
     if (formData.pezziPerCartone && formData.cartoniPerEpal) {
       const pezziPerEpal = parseInt(formData.pezziPerCartone) * parseInt(formData.cartoniPerEpal);
@@ -139,10 +141,10 @@ const AddProduct = () => {
       }));
     }
   }, [formData.pezziPerCartone, formData.cartoniPerEpal]);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     if (name === 'tipoImballaggio' && packagingDefaults[value]) {
       const defaults = packagingDefaults[value];
       setFormData({
@@ -175,7 +177,7 @@ const AddProduct = () => {
   const handleCategoryChange = (e) => {
     const selectedCategoryIt = e.target.value;
     const selectedCategory = categories.find(cat => cat.it === selectedCategoryIt);
-    
+
     if (selectedCategory) {
       setFormData(prev => ({
         ...prev,
@@ -189,7 +191,7 @@ const AddProduct = () => {
   const handleSubcategoryChange = (e) => {
     const selectedSubcategoryIt = e.target.value;
     const selectedSubcategory = subcategories.find(sub => sub.it === selectedSubcategoryIt);
-    
+
     if (selectedSubcategory) {
       setFormData(prev => ({
         ...prev,
@@ -197,18 +199,59 @@ const AddProduct = () => {
       }));
     }
   };
-  
+
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     setImmagini(files);
-    
+
     const previews = files.map(file => URL.createObjectURL(file));
     setPreviewImages(previews);
   };
-  
+
+  const handleAiTranslate = async () => {
+    if (!formData.nome.it && !formData.descrizione.it) {
+      setErrorMessage('Inserisci almeno il nome o la descrizione in italiano per tradurre.');
+      return;
+    }
+
+    setIsTranslating(true);
+    setErrorMessage('');
+
+    try {
+      let newFormData = { ...formData };
+
+      // Translate Name
+      if (formData.nome.it) {
+        const translations = await translateText(formData.nome.it);
+        newFormData.nome = {
+          ...newFormData.nome,
+          ...translations
+        };
+      }
+
+      // Translate Description
+      if (formData.descrizione.it) {
+        const translations = await translateText(formData.descrizione.it);
+        newFormData.descrizione = {
+          ...newFormData.descrizione,
+          ...translations
+        };
+      }
+
+      setFormData(newFormData);
+      setSuccessMessage('Traduzioni generate con successo!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    } catch (error) {
+      console.error(error);
+      setErrorMessage('Errore durante la traduzione automatica.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     // 🔒 VALIDAZIONE CLIENT-SIDE RIGOROSA
     try {
       // Campi obbligatori
@@ -242,15 +285,15 @@ const AddProduct = () => {
       if (immagini.length === 0) {
         throw new Error('Devi caricare almeno un\'immagine');
       }
-  
+
       setIsLoading(true);
       setErrorMessage('');
       setSuccessMessage('');
-      
+
       // 🛡️ FUNZIONE DI SANITIZZAZIONE - Auto-compila traduzioni mancanti
       const sanitizeTranslations = (obj, fieldType = 'required') => {
         const itValue = obj?.it?.trim() || '';
-        
+
         // Per campi obbligatori con valore IT, replica su tutte le lingue
         if (fieldType === 'required' && itValue) {
           return {
@@ -260,8 +303,8 @@ const AddProduct = () => {
             es: obj?.es?.trim() || itValue,
             de: obj?.de?.trim() || itValue
           };
-        } 
-        
+        }
+
         // Per sottocategoria opzionale, usa "N/A" se vuota
         if (fieldType === 'optional') {
           const hasValue = itValue !== '';
@@ -284,7 +327,7 @@ const AddProduct = () => {
             };
           }
         }
-  
+
         // Fallback generico
         return {
           it: itValue || 'N/A',
@@ -294,7 +337,7 @@ const AddProduct = () => {
           de: obj?.de?.trim() || itValue || 'N/A'
         };
       };
-  
+
       // 🔒 PREPARA DATI CON VALIDAZIONE ESATTA E COMPLETA
       const productData = {
         nome: sanitizeTranslations(formData.nome, 'required'),
@@ -310,16 +353,16 @@ const AddProduct = () => {
         pezziPerEpal: parseInt(formData.pezziPerEpal),
         descrizione: sanitizeTranslations(formData.descrizione, 'required')
       };
-  
+
       // 🔍 LOG PRE-INVIO
       console.log('📋 === DATI PRODOTTO PRE-INVIO ===');
       console.log(JSON.stringify(productData, null, 2));
       console.log('📷 Numero immagini:', immagini.length);
       console.log('================================');
-  
+
       // 🚀 INVIO RICHIESTA
       await createProdotto(productData, immagini);
-      
+
       // ✅ SUCCESSO - RESET FORM
       setFormData({
         nome: { it: '', en: '', fr: '', es: '', de: '' },
@@ -335,27 +378,27 @@ const AddProduct = () => {
         pezziPerEpal: '',
         descrizione: { it: '', en: '', fr: '', es: '', de: '' }
       });
-      
+
       setImmagini([]);
       previewImages.forEach(URL.revokeObjectURL);
       setPreviewImages([]);
-      
+
       setSuccessMessage('✅ Prodotto aggiunto con successo!');
-      
+
       // Auto-nascondi messaggio dopo 5 secondi
       setTimeout(() => {
         setSuccessMessage('');
       }, 5000);
-      
+
     } catch (error) {
       console.error('❌ === ERRORE CREAZIONE PRODOTTO ===');
       console.error('Messaggio:', error.message);
       console.error('Dettagli:', error.response?.data || error);
       console.error('====================================');
-      
+
       // Estrai messaggio errore dettagliato
       let errorMsg = 'Si è verificato un errore durante il salvataggio del prodotto.';
-      
+
       if (error.response?.data?.error?.details) {
         const details = error.response.data.error.details;
         errorMsg = `Errore di validazione:\n${details.map(d => `- ${d.field}: ${d.message}`).join('\n')}`;
@@ -364,38 +407,47 @@ const AddProduct = () => {
       } else if (error.message) {
         errorMsg = error.message;
       }
-      
+
       setErrorMessage(errorMsg);
     } finally {
       setIsLoading(false);
     }
   };
-  
+
   useEffect(() => {
     return () => {
       previewImages.forEach(URL.revokeObjectURL);
     };
   }, [previewImages]);
-  
+
   return (
     <Container className="mt-4">
       <h2 className="mb-4">Aggiungi Nuovo Prodotto</h2>
-      
+
       {successMessage && (
         <Alert variant="success">{successMessage}</Alert>
       )}
-      
+
       {errorMessage && (
         <Alert variant="danger">{errorMessage}</Alert>
       )}
-      
+
       <Card className="shadow-sm">
         <Card.Body>
           <Form onSubmit={handleSubmit}>
             {/* SEZIONE NOME PRODOTTO CON TRADUZIONI */}
             <Card className="mb-4">
-              <Card.Header>
+              <Card.Header className="d-flex justify-content-between align-items-center">
                 <h5>Nome Prodotto (Traduzioni) *</h5>
+                <Button
+                  variant="info"
+                  size="sm"
+                  onClick={handleAiTranslate}
+                  disabled={isTranslating}
+                  className="text-white"
+                >
+                  {isTranslating ? 'Traduzione in corso...' : '✨ Traduci con AI'}
+                </Button>
               </Card.Header>
               <Card.Body>
                 <Row>
@@ -486,7 +538,7 @@ const AddProduct = () => {
                 </Form.Group>
               </Col>
             </Row>
-            
+
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -524,7 +576,7 @@ const AddProduct = () => {
                 </Form.Group>
               </Col>
             </Row>
-            
+
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -557,7 +609,7 @@ const AddProduct = () => {
                 </Form.Group>
               </Col>
             </Row>
-            
+
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -572,11 +624,11 @@ const AddProduct = () => {
                     {tipiImballaggio.map((tipo, index) => (
                       <option key={index} value={tipo}>{tipo}</option>
                     ))}
-                 </Form.Select>
+                  </Form.Select>
                 </Form.Group>
               </Col>
             </Row>
-            
+
             <Row>
               <Col md={4}>
                 <Form.Group className="mb-3">
@@ -619,7 +671,7 @@ const AddProduct = () => {
                 </Form.Group>
               </Col>
             </Row>
-            
+
             {/* SEZIONE DESCRIZIONE CON TRADUZIONI */}
             <Card className="mb-4">
               <Card.Header>
@@ -650,9 +702,44 @@ const AddProduct = () => {
                     </Form.Group>
                   </Col>
                 </Row>
+                <Row>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Francese</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={formData.descrizione.fr}
+                        onChange={(e) => handleTranslationChange('descrizione', 'fr', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Spagnolo</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={formData.descrizione.es}
+                        onChange={(e) => handleTranslationChange('descrizione', 'es', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                  <Col md={4}>
+                    <Form.Group className="mb-3">
+                      <Form.Label>Tedesco</Form.Label>
+                      <Form.Control
+                        as="textarea"
+                        rows={3}
+                        value={formData.descrizione.de}
+                        onChange={(e) => handleTranslationChange('descrizione', 'de', e.target.value)}
+                      />
+                    </Form.Group>
+                  </Col>
+                </Row>
               </Card.Body>
             </Card>
-            
+
             <Form.Group className="mb-3">
               <Form.Label>Immagini Prodotto *</Form.Label>
               <Form.Control
@@ -666,7 +753,7 @@ const AddProduct = () => {
                 Puoi selezionare più immagini. Formati supportati: JPG, PNG, GIF.
               </Form.Text>
             </Form.Group>
-            
+
             {previewImages.length > 0 && (
               <div className="mb-3">
                 <p>Anteprime:</p>
@@ -683,7 +770,7 @@ const AddProduct = () => {
                 </div>
               </div>
             )}
-            
+
             <div className="mt-4">
               <Button
                 type="submit"

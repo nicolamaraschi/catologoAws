@@ -1,5 +1,7 @@
+// src/pages/SubcategoryManagement.js
 import React, { useState, useEffect, useCallback } from 'react';
-import { Container, Card, Row, Col, Form, Button, ListGroup, Modal, Alert, Spinner, InputGroup } from 'react-bootstrap';
+import { Container, Row, Col, Form, Button, Modal, Alert, InputGroup } from 'react-bootstrap';
+import { FiPlus, FiEdit2, FiTrash2, FiGrid, FiArrowLeft } from 'react-icons/fi';
 import {
   getSubcategoriesByCategory,
   addSubcategory,
@@ -10,6 +12,7 @@ import {
   updateCategory,
   deleteCategory
 } from '../api';
+import './Dashboard.css';
 
 const SubcategoryManagement = () => {
   // Stati per i dati
@@ -276,7 +279,7 @@ const SubcategoryManagement = () => {
     <>
       {['it', 'en', 'fr', 'es', 'de'].map(lang => (
         <InputGroup className="mb-2" key={lang}>
-          <InputGroup.Text style={{ width: '50px', justifyContent: 'center' }}>
+          <InputGroup.Text style={{ width: '50px', justifyContent: 'center', fontWeight: 'bold' }}>
             {lang.toUpperCase()}
           </InputGroup.Text>
           <Form.Control
@@ -291,246 +294,256 @@ const SubcategoryManagement = () => {
   );
 
   return (
-    <Container className="my-4">
-      <h2 className="mb-4 text-center">Gestione Categorie e Sottocategorie</h2>
+    <div className="dashboard-container">
+      <Container>
+        <div className="page-header">
+          <h1 className="page-title">Gestione Categorie</h1>
+          <p className="page-subtitle">
+            Organizza il catalogo definendo categorie principali e sottocategorie.
+          </p>
+        </div>
 
-      {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
-      {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
+        {error && <Alert variant="danger" onClose={() => setError('')} dismissible>{error}</Alert>}
+        {success && <Alert variant="success" onClose={() => setSuccess('')} dismissible>{success}</Alert>}
 
-      <Row>
-        {/* --- COLONNA CATEGORIE --- */}
-        <Col lg={5} className="mb-4">
-          <Card className="h-100 shadow-sm">
-            <Card.Header className="bg-primary text-white d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">Categorie</h5>
-              <Button variant="light" size="sm" onClick={handleShowAddCategory}>
-                <i className="bi bi-plus-lg"></i> Nuova
-              </Button>
-            </Card.Header>
-            <Card.Body className="p-0">
+        <Row className="g-4">
+          {/* --- COLONNA CATEGORIE --- */}
+          <Col lg={4}>
+            <div className="glass-card h-100">
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3 className="card-title mb-0">Categorie</h3>
+                <button className="btn-custom btn-primary-custom py-2 px-3" onClick={handleShowAddCategory}>
+                  <FiPlus /> Nuova
+                </button>
+              </div>
+
               {loading && categories.length === 0 ? (
-                <div className="text-center p-4">Caricamento...</div>
+                <div className="text-center p-4 text-secondary">Caricamento...</div>
               ) : (
-                <ListGroup variant="flush">
+                <div className="d-flex flex-column gap-2">
                   {categories.map((cat, index) => {
                     const isSelected = selectedCategory && selectedCategory.it === cat.it;
                     return (
-                      <ListGroup.Item
+                      <div
                         key={index}
-                        active={isSelected}
-                        className="d-flex justify-content-between align-items-center p-2"
+                        className={`category-list-item p-3 d-flex justify-content-between align-items-center ${isSelected ? 'active' : ''}`}
+                        onClick={() => setSelectedCategory(cat)}
+                        style={{ cursor: 'pointer' }}
                       >
-                        <div
-                          className="flex-grow-1"
-                          style={{ cursor: 'pointer' }}
-                          onClick={() => setSelectedCategory(cat)}
-                        >
-                          <strong>{cat.it}</strong>
-                          <div className={`small ${isSelected ? 'text-white-50' : 'text-muted'}`}>
+                        <div className="flex-grow-1">
+                          <div className="category-name fw-bold">{cat.it}</div>
+                          <div className="small text-secondary text-truncate" style={{ maxWidth: '180px' }}>
                             {['en', 'fr', 'es', 'de'].map(l => cat[l]).filter(Boolean).join(' | ')}
                           </div>
                         </div>
 
-                        <div className="d-flex gap-2">
-                          <Button
-                            variant={isSelected ? "light" : "outline-primary"}
-                            size="sm"
+                        <div className="d-flex gap-1">
+                          <button
+                            className="btn btn-sm btn-link text-secondary p-1"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleShowEditCategory(cat);
                             }}
-                            title="Modifica Categoria"
                           >
-                            <i className="bi bi-pencil-square"></i>
-                          </Button>
-                          <Button
-                            variant={isSelected ? "light" : "outline-danger"}
-                            size="sm"
+                            <FiEdit2 />
+                          </button>
+                          <button
+                            className="btn btn-sm btn-link text-danger p-1"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleShowDeleteCategory(cat);
                             }}
-                            title="Elimina Categoria"
                           >
-                            <i className="bi bi-trash"></i>
-                          </Button>
+                            <FiTrash2 />
+                          </button>
                         </div>
-                      </ListGroup.Item>
+                      </div>
                     );
                   })}
-                </ListGroup>
+                </div>
               )}
-            </Card.Body>
-          </Card>
-        </Col>
+            </div>
+          </Col>
 
-        {/* --- COLONNA SOTTOCATEGORIE --- */}
-        <Col lg={7}>
-          <Card className="shadow-sm h-100">
-            <Card.Header className="bg-light d-flex justify-content-between align-items-center">
-              <h5 className="mb-0">
-                {selectedCategory ? `Sottocategorie: ${selectedCategory.it}` : 'Seleziona Categoria'}
-              </h5>
-              <Button variant="success" size="sm" onClick={handleShowAddSub} disabled={!selectedCategory}>
-                <i className="bi bi-plus-circle me-1"></i> Aggiungi
-              </Button>
-            </Card.Header>
-            <Card.Body>
-              {!selectedCategory ? (
-                <div className="text-center py-5 text-muted">
-                  <i className="bi bi-arrow-left-circle display-4"></i>
-                  <p className="mt-3">Seleziona una categoria a sinistra per gestirne le sottocategorie.</p>
+          {/* --- COLONNA SOTTOCATEGORIE --- */}
+          <Col lg={8}>
+            <div className="glass-card h-100">
+              <div className="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+                <div className="d-flex align-items-center gap-3">
+                  {selectedCategory && <div className="p-2 bg-light rounded-circle"><FiGrid className="text-primary" /></div>}
+                  <div>
+                    <h3 className="card-title mb-0">
+                      {selectedCategory ? selectedCategory.it : 'Seleziona Categoria'}
+                    </h3>
+                    {selectedCategory && <span className="text-secondary small">Gestione Sottocategorie</span>}
+                  </div>
                 </div>
-              ) : subcategories.length === 0 ? (
-                <div className="text-center py-5 text-muted">
-                  <p>Nessuna sottocategoria presente.</p>
-                  <Button variant="outline-success" size="sm" onClick={handleShowAddSub}>
-                    Aggiungine una ora
-                  </Button>
-                </div>
-              ) : (
-                <ListGroup variant="flush">
-                  {subcategories.map((sub, index) => (
-                    <ListGroup.Item key={index} className="d-flex justify-content-between align-items-center">
-                      <div>
-                        <strong>{sub.it}</strong>
-                        <div className="small text-muted">
-                          {['en', 'fr', 'es', 'de'].map(l => sub[l] ? `${l.toUpperCase()}: ${sub[l]}` : null).filter(Boolean).join(' | ')}
+                <button
+                  className="btn-custom btn-primary-custom py-2 px-3"
+                  onClick={handleShowAddSub}
+                  disabled={!selectedCategory}
+                >
+                  <FiPlus /> Aggiungi
+                </button>
+              </div>
+
+              <div className="flex-grow-1">
+                {!selectedCategory ? (
+                  <div className="text-center py-5 text-secondary">
+                    <FiArrowLeft size={48} className="mb-3 opacity-25" />
+                    <p>Seleziona una categoria a sinistra per gestirne le sottocategorie.</p>
+                  </div>
+                ) : subcategories.length === 0 ? (
+                  <div className="text-center py-5 text-secondary">
+                    <p>Nessuna sottocategoria presente.</p>
+                    <button className="btn-custom btn-outline-custom mt-2" onClick={handleShowAddSub}>
+                      Aggiungine una ora
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    {subcategories.map((sub, index) => (
+                      <div key={index} className="subcategory-card">
+                        <div>
+                          <div className="fw-bold text-dark mb-1">{sub.it}</div>
+                          <div className="small text-secondary">
+                            {['en', 'fr', 'es', 'de'].map(l => sub[l] ? <span key={l} className="me-2 text-uppercase badge bg-light text-dark border">{l}: {sub[l]}</span> : null)}
+                          </div>
+                        </div>
+                        <div className="action-btn-group">
+                          <button className="btn btn-sm btn-outline-primary" onClick={() => handleShowEditSub(sub)}>
+                            <FiEdit2 /> Modifica
+                          </button>
+                          <button className="btn btn-sm btn-outline-danger" onClick={() => handleShowDeleteSub(sub)}>
+                            <FiTrash2 /> Elimina
+                          </button>
                         </div>
                       </div>
-                      <div>
-                        <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleShowEditSub(sub)}>
-                          <i className="bi bi-pencil"></i> Modifica
-                        </Button>
-                        <Button variant="outline-danger" size="sm" onClick={() => handleShowDeleteSub(sub)}>
-                          <i className="bi bi-trash"></i> Elimina
-                        </Button>
-                      </div>
-                    </ListGroup.Item>
-                  ))}
-                </ListGroup>
-              )}
-            </Card.Body>
-          </Card>
-        </Col>
-      </Row>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Col>
+        </Row>
 
-      {/* --- MODALS CATEGORIE --- */}
+        {/* --- MODALS CATEGORIE --- */}
 
-      {/* ADD CATEGORY */}
-      <Modal show={showAddCategoryModal} onHide={() => setShowAddCategoryModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Nuova Categoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>ID Categoria (es. DOMESTICO)</Form.Label>
-            <Form.Control
-              type="text"
-              value={newCategoryId}
-              onChange={(e) => setNewCategoryId(e.target.value.toUpperCase())}
-              placeholder="Identificativo univoco"
-            />
-          </Form.Group>
-          <hr />
-          <h6>Traduzioni</h6>
-          {renderTranslationInputs(newCategoryTranslations, setNewCategoryTranslations)}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddCategoryModal(false)}>Annulla</Button>
-          <Button variant="primary" onClick={handleAddCategory} disabled={loading}>Salva</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* ADD CATEGORY */}
+        <Modal show={showAddCategoryModal} onHide={() => setShowAddCategoryModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Nuova Categoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>ID Categoria (es. DOMESTICO)</Form.Label>
+              <Form.Control
+                type="text"
+                value={newCategoryId}
+                onChange={(e) => setNewCategoryId(e.target.value.toUpperCase())}
+                placeholder="Identificativo univoco"
+              />
+            </Form.Group>
+            <hr />
+            <h6>Traduzioni</h6>
+            {renderTranslationInputs(newCategoryTranslations, setNewCategoryTranslations)}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddCategoryModal(false)}>Annulla</Button>
+            <Button variant="primary" onClick={handleAddCategory} disabled={loading}>Salva</Button>
+          </Modal.Footer>
+        </Modal>
 
-      {/* EDIT CATEGORY */}
-      <Modal show={showEditCategoryModal} onHide={() => setShowEditCategoryModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Modifica Categoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <h6>Traduzioni</h6>
-          {renderTranslationInputs(editCategoryTranslations, setEditCategoryTranslations)}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditCategoryModal(false)}>Annulla</Button>
-          <Button variant="primary" onClick={handleEditCategory} disabled={loading}>Salva Modifiche</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* EDIT CATEGORY */}
+        <Modal show={showEditCategoryModal} onHide={() => setShowEditCategoryModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Modifica Categoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <h6>Traduzioni</h6>
+            {renderTranslationInputs(editCategoryTranslations, setEditCategoryTranslations)}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditCategoryModal(false)}>Annulla</Button>
+            <Button variant="primary" onClick={handleEditCategory} disabled={loading}>Salva Modifiche</Button>
+          </Modal.Footer>
+        </Modal>
 
-      {/* DELETE CATEGORY */}
-      <Modal show={showDeleteCategoryModal} onHide={() => setShowDeleteCategoryModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Elimina Categoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Sei sicuro di voler eliminare la categoria <strong>{editCategoryOriginalId}</strong>?
-          <br />
-          <span className="text-danger">Verranno eliminate anche tutte le sottocategorie associate!</span>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteCategoryModal(false)}>Annulla</Button>
-          <Button variant="danger" onClick={handleDeleteCategory} disabled={loading}>Elimina</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* DELETE CATEGORY */}
+        <Modal show={showDeleteCategoryModal} onHide={() => setShowDeleteCategoryModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Elimina Categoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Sei sicuro di voler eliminare la categoria <strong>{editCategoryOriginalId}</strong>?
+            <br />
+            <span className="text-danger">Verranno eliminate anche tutte le sottocategorie associate!</span>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowDeleteCategoryModal(false)}>Annulla</Button>
+            <Button variant="danger" onClick={handleDeleteCategory} disabled={loading}>Elimina</Button>
+          </Modal.Footer>
+        </Modal>
 
 
-      {/* --- MODALS SOTTOCATEGORIE --- */}
+        {/* --- MODALS SOTTOCATEGORIE --- */}
 
-      {/* ADD SUBCATEGORY */}
-      <Modal show={showAddSubModal} onHide={() => setShowAddSubModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Nuova Sottocategoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Group className="mb-3">
-            <Form.Label>ID Sottocategoria</Form.Label>
-            <Form.Control
-              type="text"
-              value={newSubcategoryName}
-              onChange={(e) => setNewSubcategoryName(e.target.value)}
-              placeholder="Identificativo univoco"
-            />
-          </Form.Group>
-          <hr />
-          <h6>Traduzioni</h6>
-          {renderTranslationInputs(newSubcategoryTranslations, setNewSubcategoryTranslations)}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowAddSubModal(false)}>Annulla</Button>
-          <Button variant="success" onClick={handleAddSubcategory} disabled={loading}>Aggiungi</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* ADD SUBCATEGORY */}
+        <Modal show={showAddSubModal} onHide={() => setShowAddSubModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Nuova Sottocategoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>ID Sottocategoria</Form.Label>
+              <Form.Control
+                type="text"
+                value={newSubcategoryName}
+                onChange={(e) => setNewSubcategoryName(e.target.value)}
+                placeholder="Identificativo univoco"
+              />
+            </Form.Group>
+            <hr />
+            <h6>Traduzioni</h6>
+            {renderTranslationInputs(newSubcategoryTranslations, setNewSubcategoryTranslations)}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowAddSubModal(false)}>Annulla</Button>
+            <Button variant="success" onClick={handleAddSubcategory} disabled={loading}>Aggiungi</Button>
+          </Modal.Footer>
+        </Modal>
 
-      {/* EDIT SUBCATEGORY */}
-      <Modal show={showEditSubModal} onHide={() => setShowEditSubModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Modifica Sottocategoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <h6>Traduzioni</h6>
-          {renderTranslationInputs(editSubcategoryTranslations, setEditSubcategoryTranslations)}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowEditSubModal(false)}>Annulla</Button>
-          <Button variant="primary" onClick={handleEditSubcategory} disabled={loading}>Salva Modifiche</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* EDIT SUBCATEGORY */}
+        <Modal show={showEditSubModal} onHide={() => setShowEditSubModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Modifica Sottocategoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <h6>Traduzioni</h6>
+            {renderTranslationInputs(editSubcategoryTranslations, setEditSubcategoryTranslations)}
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowEditSubModal(false)}>Annulla</Button>
+            <Button variant="primary" onClick={handleEditSubcategory} disabled={loading}>Salva Modifiche</Button>
+          </Modal.Footer>
+        </Modal>
 
-      {/* DELETE SUBCATEGORY */}
-      <Modal show={showDeleteSubModal} onHide={() => setShowDeleteSubModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Elimina Sottocategoria</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          Sei sicuro di voler eliminare <strong>{selectedSubcategory?.it}</strong>?
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowDeleteSubModal(false)}>Annulla</Button>
-          <Button variant="danger" onClick={handleDeleteSubcategory} disabled={loading}>Elimina</Button>
-        </Modal.Footer>
-      </Modal>
+        {/* DELETE SUBCATEGORY */}
+        <Modal show={showDeleteSubModal} onHide={() => setShowDeleteSubModal(false)} className="modal-custom" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Elimina Sottocategoria</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Sei sicuro di voler eliminare <strong>{selectedSubcategory?.it}</strong>?
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowDeleteSubModal(false)}>Annulla</Button>
+            <Button variant="danger" onClick={handleDeleteSubcategory} disabled={loading}>Elimina</Button>
+          </Modal.Footer>
+        </Modal>
 
-    </Container>
+      </Container>
+    </div>
   );
 };
 
