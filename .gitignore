@@ -75,6 +75,3 @@ amplify-meta.json
 # Deployment outputs
 deployment-outputs.env
 stack-outputs-backup-*.json
-
-
-**/aws-config.js
