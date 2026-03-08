@@ -60,9 +60,14 @@ const HomePage = () => {
     <div className="home-page">
       {/* Hero section */}
       <section className="hero-section">
-        <video className="hero-bg-video" autoPlay loop muted playsInline>
-          <source src="/video.mp4?v=2" type="video/mp4" />
-        </video>
+        <iframe
+          className="hero-bg-video"
+          src="https://www.youtube.com/embed/s94W7-5AF44?autoplay=1&mute=1&controls=0&loop=1&playlist=s94W7-5AF44&showinfo=0&rel=0&modestbranding=1"
+          frameBorder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          title="Background hero video"
+        ></iframe>
         <div className="hero-overlay"></div>
 
         <div className="container">
@@ -84,16 +89,14 @@ const HomePage = () => {
       <section className="company-video-section">
         <div className="container">
           <div className="company-video-wrapper">
-            <video
+            <iframe
               className="company-video"
-              controls
-              loop
-              playsInline
-              poster="/logo.png"
-            >
-              <source src="/companyProfileOrsiItaliano.mp4?v=2" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
+              src="https://www.youtube.com/embed/0q9cbcrvJic?rel=0"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              title="Company Profile Orsi"
+            ></iframe>
           </div>
         </div>
       </section>

@@ -18,12 +18,17 @@
 
 .hero-bg-video {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw;
+  /* 16:9 aspect ratio */
+  min-height: 100vh;
+  min-width: 177.77vh;
+  transform: translate(-50%, -50%);
   z-index: 0;
+  pointer-events: none;
+  /* disables interaction so controls don't show up / get clicked on hero background */
 }
 
 .hero-overlay {
