@@ -1,8 +1,14 @@
 import axios from 'axios';
 import { fetchAuthSession, signOut } from 'aws-amplify/auth';
 
-// 1. Ora legge l'URL dal file .env (che hai creato)
-const API_URL = process.env.REACT_APP_API_BASE_URL;
+// 1. Ora legge l'URL dal file .env o variabile di ambiente Amplify
+let API_URL = process.env.REACT_APP_API_BASE_URL || 'https://nnk37tr17e.execute-api.eu-west-1.amazonaws.com/production/api/admin';
+
+// SECURITY HOTFIX: Se l'app admin è stata compilata per errore con il base URL 
+// dell'app utente (public/catalogo), lo correggiamo dinamicamente per puntare ad /admin.
+if (API_URL.includes('/public/catalogo')) {
+  API_URL = API_URL.replace('/public/catalogo', '/admin');
+}
 
 console.group('🔍 API Configuration (Admin)');
 console.log('Using Admin API URL:', API_URL);
